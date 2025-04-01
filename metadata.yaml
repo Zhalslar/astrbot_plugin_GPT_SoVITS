@@ -1,6 +1,6 @@
 name: astrbot_plugin_GPT_SoVITS # 这是你的插件的唯一识别名。
 desc: 对接本地部署的GPT_SoVITS,为astrbot提供文本转语音(TTS)服务 # 插件简短描述
 help: /说 xxx  # 插件的帮助信息
-version: v1.0.0 # 插件版本号。格式：v1.1.1 或者 v1.1
+version: v1.0.1 # 插件版本号。格式：v1.1.1 或者 v1.1
 author: Zhalslar # 作者
 repo: https://github.com/Zhalslar/astrbot_plugin_GPT_SoVITS # 插件的仓库地址
