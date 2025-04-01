@@ -87,21 +87,14 @@ class HelpPlugin(Star):
             "media_type": config.get('media_type', 'wav'),  # 输出媒体的类型
         }
 
-    # 在 LLM 请求完成后，触发 on_llm_response 钩子
-    @filter.on_llm_response()
-    async def on_llm_response(self, event: AstrMessageEvent, resp: LLMResponse):
-        """将LLM生成的文本按概率生成语音并发送"""
-        if random.random() > self.send_record_probability:
-            return
-
-        target_emotion = self.default_emotion
-        target_text = resp.completion_text
+    async def generate_and_send_tts(self, event: AstrMessageEvent, text: str, emotion: str):
+        """生成TTS语音并发送"""
         group_id = event.get_group_id()
         sender_id = event.get_sender_id()
 
         params = self.default_tts_params.copy()
-        params.update(preset_emotion[target_emotion])
-        params["text"] = target_text
+        params.update(preset_emotion[emotion])
+        params["text"] = text
 
         file_name = self.generate_file_name(params=params, group_id=group_id, user_id=sender_id)
         await self.tts_run(params=params, file_name=file_name)
@@ -117,12 +110,22 @@ class HelpPlugin(Star):
             os.remove(self.save_path)
         event.stop_event()  # 停止事件传播
 
+    # 在 LLM 请求完成后，触发 on_llm_response 钩子
+    @filter.on_llm_response()
+    async def on_llm_response(self, event: AstrMessageEvent, resp: LLMResponse):
+        """将LLM生成的文本按概率生成语音并发送"""
+        if random.random() > self.send_record_probability:
+            return
+
+        emotion = self.default_emotion
+        text = resp.completion_text
+
+        await self.generate_and_send_tts(event, text, emotion)
+
 
     @filter.command("说", alias=preset_emotion_set)
-    async def on_regex(self, event: AstrMessageEvent, text:str=None):
+    async def on_regex(self, event: AstrMessageEvent, text: str = None):
         """xxx说xxx，直接调用TTS，发送合成后的语音"""
-        group_id = event.get_group_id()
-        sender_id = event.get_sender_id()
         message_str = event.get_message_str()
 
         emotion = next((emo for emo in preset_emotion_set if emo in message_str), self.default_emotion)
@@ -130,21 +133,7 @@ class HelpPlugin(Star):
         if not emotion or not text:
             return
 
-        params = self.default_tts_params.copy()
-        logger.info(f"参数：{params}")
-        params.update(preset_emotion[emotion])
-        params["text"] = text
-
-        file_name = self.generate_file_name(params=params, group_id=group_id, user_id=sender_id)
-        file_path = await self.tts_run(params=params, file_name=file_name)
-
-        if file_path is None:
-            logger.error("TTS任务执行失败！")
-            return
-
-        record = Comp.Record(file=file_path)
-        yield event.chain_result([record])
-
+        await self.generate_and_send_tts(event, text, emotion)
 
 
     def generate_file_name(self, params, group_id: str = "0", user_id: str = "0") -> str:
