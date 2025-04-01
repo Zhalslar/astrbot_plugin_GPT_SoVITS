@@ -28,9 +28,12 @@ git clone https://github.com/Zhalslar/astrbot_plugin_GPT_SoVITS
 ## ⚙️ 配置
  
 请在astrbot面板配置，插件管理 -> astrbot_plugin_memelite -> 操作 -> 插件配置
+![tmpE999](https://github.com/user-attachments/assets/2f101895-a28f-45d7-8707-84f46ea3d990)
 
 
 ## 🐔 使用说明
+- 正常聊天，有概率自动触发LLM文本转语音，概率可在配置里更改
+
 - `{emotion} {text}` - 生成语音，emotion为情绪，text为文本
 - `惊讶地说 怎么啦？` - 示例1，注意用空格隔空参数
 - `生气地说 我再也不理你了` - 示例2，注意用空格隔空参数
