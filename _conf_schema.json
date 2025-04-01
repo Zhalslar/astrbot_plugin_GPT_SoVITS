@@ -29,21 +29,21 @@
         "hint": "TTS合成时，采用的的默认参数",
         "items": {
             "ref_audio_path": {
-                "description": "",
+                "description": "参考音频文件路径",
                 "type": "string",
-                "hint": "参考音频文件路径",
+                "hint": "",
                 "default": ""
             },
             "text": {
-                "description": "",
+                "description": "要转换的文本",
                 "type": "string",
-                "hint": "要转换的文本",
+                "hint": "",
                 "default": ""
             },
             "text_lang": {
-                "description": "",
+                "description": "文本语言",
                 "type": "string",
-                "hint": "文本语言，默认为中文",
+                "hint": "默认为中文",
                 "default": "zh"
             },
             "aux_ref_audio_paths": {
