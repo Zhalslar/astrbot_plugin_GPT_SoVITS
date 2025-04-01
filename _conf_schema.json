@@ -1,153 +1,26 @@
 {
-    "base_url": {
-        "description": "GPT-SoVITS API 的 URL",
+    "prefix": {
+        "description": "触发meme的前缀",
         "type": "string",
-        "hint": "默认是http://127.0.0.1:9880",
-        "default": "http://127.0.0.1:9880"
+        "hint": "消息含有此前缀才能触发meme，默认为空（即不使用前缀），注意此配置不受bot全局前缀的影响",
+        "default": ""
     },
-    "default_emotion": {
-        "description": "默认使用的语气",
-        "type": "string",
-        "hint": "内置语气有：温柔地、开心地、惊讶地、生气地",
-        "default": "惊讶地"
-    },
-    "default_text": {
-        "description": "默认使用的文本",
-        "type": "string",
-        "hint": "输入空文本时起效",
-        "default": "干嘛啦？"
-    },
-    "save_audio": {
-        "description": "是否保存合成的音频",
+     "fuzzy_match": {
+        "description": "是否模糊匹配触发",
         "type": "bool",
-        "hint": "保存路径：./data/GPT_Sovits_data/saved_audio",
+        "hint": "消息中含有关键词即可触发meme，谨慎打开，容易误触",
         "default": false
     },
-    "default_tts_params": {
-        "description": "TTS合成的默认参数",
-        "type": "object",
-        "hint": "TTS合成时，采用的的默认参数",
-        "items": {
-            "ref_audio_path": {
-                "description": "",
-                "type": "string",
-                "hint": "参考音频文件路径",
-                "default": ""
-            },
-            "text": {
-                "description": "",
-                "type": "string",
-                "hint": "要转换的文本",
-                "default": ""
-            },
-            "text_lang": {
-                "description": "",
-                "type": "string",
-                "hint": "文本语言，默认为中文",
-                "default": "zh"
-            },
-            "aux_ref_audio_paths": {
-                "description": "辅助参考音频文件路径列表",
-                "type": "string",
-                "hint": "",
-                "default": ""
-            },
-            "prompt_text": {
-                "description": "提示文本",
-                "type": "string",
-                "hint": "用于影响语音合成",
-                "default": ""
-            },
-            "prompt_lang": {
-                "description": "提示文本的语言",
-                "type": "string",
-                "hint": "默认为中文",
-                "default": "zh"
-            },
-            "top_k": {
-                "description": "生成语音的多样性",
-                "type": "int",
-                "hint": "",
-                "default": 5
-            },
-            "top_p": {
-                "description": "核采样的阈值",
-                "type": "float",
-                "hint": "",
-                "default": 1.0
-            },
-            "temperature": {
-                "description": "生成语音的随机性",
-                "type": "float",
-                "hint": "",
-                "default": 1.0
-            },
-            "text_split_method": {
-                "description": "切分文本的方法",
-                "type": "string",
-                "hint": "可选值：\n`cut0`：不切分\n `cut1`：四句一切\n`cut2`：50字一切\n `cut3`：按中文句号切\n `cut4`：按英文句号切\n `cut5`：按标点符号切",
-                "default": "cut3"
-            },
-            "batch_size": {
-                "description": "批处理大小",
-                "type": "int",
-                "hint": "",
-                "default": 1
-            },
-            "batch_threshold": {
-                "description": "批处理阈值",
-                "type": "float",
-                "hint": "",
-                "default": 0.75
-            },
-            "split_bucket": {
-                "description": "将文本分割成桶以便并行处理",
-                "type": "bool",
-                "hint": "",
-                "default": true
-            },
-            "speed_factor": {
-                "description": "语音播放速度的倍数",
-                "type": "float",
-                "hint": "",
-                "default": 1
-            },
-            "fragment_interval": {
-                "description": "语音片段之间的间隔时间",
-                "type": "float",
-                "hint": "",
-                "default": 0.3
-            },
-            "streaming_mode": {
-                "description": "启用流模式",
-                "type": "bool",
-                "hint": "",
-                "default": false
-            },
-            "seed": {
-                "description": "随机种子",
-                "type": "int",
-                "hint": "用于结果的可重复性",
-                "default": -1
-            },
-            "parallel_infer": {
-                "description": "并行执行推理",
-                "type": "bool",
-                "hint": "",
-                "default": true
-            },
-            "repetition_penalty": {
-                "description": "重复惩罚因子",
-                "type": "float",
-                "hint": "",
-                "default": 1.35
-            },
-            "media_type": {
-                "description": "输出媒体的类型",
-                "type": "string",
-                "hint": "",
-                "default": "wav"
-            }
-        }
-    }
+     "is_compress_image": {
+          "description": "是否压缩图片",
+          "type": "bool",
+          "hint": "压缩长或宽超过512px的静态生成图，防止大图展示，可防刷屏",
+          "default": true
+      },
+   "is_check_resources": {
+          "description": "启动时检查资源",
+          "type": "bool",
+          "hint": "每次启动本插件时，检查一遍meme所需资源，缺失资源会自动下载，确保资源下载完整时可关掉这个选项，关掉可优化启动性能",
+          "default": true
+      }
 }
