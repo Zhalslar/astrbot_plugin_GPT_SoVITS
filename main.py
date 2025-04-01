@@ -55,8 +55,8 @@ preset_emotion: Dict = {
 preset_emotion_set = set(preset_emotion.keys())
 
 
-@register("astrbot_plugin_GPT_Sovits", "Zhalslar", "GPT_Sovits对接插件", "1.0.0", "https://github.com/Zhalslar/astrbot_plugin_GPT_SoVITS")
-class HelpPlugin(Star):
+@register("astrbot_plugin_GPT_SoVITS", "Zhalslar", "GPT_SoVITS对接插件", "1.0.0", "https://github.com/Zhalslar/astrbot_plugin_GPT_SoVITS")
+class GPTSoVITSPlugin(Star):
     def __init__(self, context: Context, config: AstrBotConfig):
         super().__init__(context)
         self.base_url: str = config.get('base_url')
