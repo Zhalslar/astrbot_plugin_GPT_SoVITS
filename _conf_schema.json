@@ -6,9 +6,9 @@
         "default": "http://127.0.0.1:5000/tts"
     },
     "default_emotion": {
-        "description": "默认使用的语气",
+        "description": "默认使用的情绪",
         "type": "string",
-        "hint": "内置语气有：温柔地说、开心地说、惊讶地说、生气地说",
+        "hint": "内置情绪有：温柔地说、开心地说、惊讶地说、生气地说",
         "default": "惊讶地说"
     },
     "save_audio": {

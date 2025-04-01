@@ -20,7 +20,7 @@ REFERENCE_AUDIO_DIR: Path =  Path(__file__).resolve().parent / "reference_audio"
 SAVED_AUDIO_DIR.mkdir(parents=True, exist_ok=True)
 REFERENCE_AUDIO_DIR.mkdir(parents=True, exist_ok=True)
 
-# 预设语气
+# 预设情绪
 preset_emotion: Dict = {
     "温柔地说": {
         "ref_audio_path": REFERENCE_AUDIO_DIR / "不要害怕，也不要哭了.wav",
@@ -60,7 +60,7 @@ class HelpPlugin(Star):
     def __init__(self, context: Context, config: AstrBotConfig):
         super().__init__(context)
         self.base_url: str = config.get('base_url')
-        self.default_emotion: str =  config.get("default_emotion","惊讶地")  # 默认语气预设
+        self.default_emotion: str =  config.get("default_emotion","惊讶地")  # 默认情绪预设
         self.save_audio: bool = config.get("save_audio", False) # 是否保存合成的音频
         self.save_path = None
         self.send_record_probability: float = config.get("send_record_probability", 0.15)  # 发语音的概率
@@ -135,13 +135,6 @@ class HelpPlugin(Star):
         params.update(preset_emotion[emotion])
         params["text"] = text
 
-        logger.info(
-            f"\nTTS任务开启："
-            f"\n群号：{group_id}"
-            f"\n发起者：{sender_id}"
-            f"\n语气预设：{emotion}"
-            f"\n目标文本：{text}"
-        )
         file_name = self.generate_file_name(params=params, group_id=group_id, user_id=sender_id)
         file_path = await self.tts_run(params=params, file_name=file_name)
 
