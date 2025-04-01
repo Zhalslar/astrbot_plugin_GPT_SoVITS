@@ -9,7 +9,7 @@
 
 - 第一步，本地部署 GPT_SoVITS（安装包大约5G，装完后10G以上）、
 - 本人用的是B站up主做的整合包: [2小时轻松入门GPT-SoVITS，包含整合包，autodl，colab教程，搭配文档观看](https://www.bilibili.com/video/BV1GJ4m1e7x2/?share_source=copy_web&vd_source=b3e26d110d9269b5607f8a2e9ffb7345)
-- 安装过程遇到的各种问题，如非本插件的范畴之内，请自行解决
+- 安装过程遇到的各种问题，如非本插件范畴内，请自行解决
 
 - 第二步，安装本插件
 - 可以直接在astrbot的插件市场搜索astrbot_plugin_GPT_SoVITS，点击安装，耐心等待安装完成即可  
