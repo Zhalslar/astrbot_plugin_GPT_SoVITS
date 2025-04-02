@@ -39,7 +39,12 @@ git clone https://github.com/Zhalslar/astrbot_plugin_GPT_SoVITS
 
 
 ## 🐔 使用说明
-### 第一步，启动GPT_SoVITS的API服务
+### 第一步，启动GPT_SoVITS的API服务  
+编写一个bat文件放在GPT_SoVITS整合包的根目录里，用来启动动GPT_SoVITS的API服务，文件内容：
+```bash
+runtime\python.exe api_v2.py
+pause
+```
 ![tmpAC40](https://github.com/user-attachments/assets/d07f59a0-7a97-478b-99b0-2ef3d207be3f)
 
 
