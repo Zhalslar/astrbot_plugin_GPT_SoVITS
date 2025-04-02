@@ -40,19 +40,23 @@ git clone https://github.com/Zhalslar/astrbot_plugin_GPT_SoVITS
 
 ## 🐔 使用说明
 ### 第一步，启动GPT_SoVITS的API服务  
-编写一个bat文件放在GPT_SoVITS整合包的根目录里，用来启动动GPT_SoVITS的API服务，文件内容：
+编写一个bat批处理文件放在GPT_SoVITS整合包的根目录里，文件内容：
 ```bash
 runtime\python.exe api_v2.py
 pause
 ```
+然后双击bat文件即可在终端启动GPT_SoVITS的API服务
 ![tmpAC40](https://github.com/user-attachments/assets/d07f59a0-7a97-478b-99b0-2ef3d207be3f)
 
 
 ### 第二步，正常使用
-- `{emotion} {text}` - 生成语音，emotion为情绪，text为文本
-- `惊讶地说 怎么啦？` - 示例1，注意用空格隔空参数
-- `生气地说 我再也不理你了` - 示例2，注意用空格隔空参数
-
+- 自动调用：调用LLM得到的文本有概率会自动转成语音发送，概率可在配置里调
+- 指令调用：
+```bash
+ /{emotion} {text}` # 生成语音，emotion为情绪，text为文本
+/惊讶地说 怎么啦？ # 示例1，注意用空格隔空参数
+/生气地说 我再也不理你了 # 示例2，注意用空格隔空参数
+```
 ## 📌 注意事项
 - 本项目优先兼容官方整合包，第三方整合包只要不是大改的基本也能对接
 - GPT_SoVITS的部署目前我仅测试了Windows环境，更多环境下的部署请自行查阅[GPT_SoVITS官方文档](https://github.com/RVC-Boss/GPT-SoVITS/blob/main/docs/cn/README.md)
