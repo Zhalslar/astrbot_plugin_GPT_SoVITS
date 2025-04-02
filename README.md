@@ -33,6 +33,10 @@ git clone https://github.com/Zhalslar/astrbot_plugin_GPT_SoVITS
 
 
 ## 🐔 使用说明
+### 第一步，启动GPT_SoVITS的API服务
+![tmpAC40](https://github.com/user-attachments/assets/d07f59a0-7a97-478b-99b0-2ef3d207be3f)
+
+### 第二步，正常使用
 - `{emotion} {text}` - 生成语音，emotion为情绪，text为文本
 - `惊讶地说 怎么啦？` - 示例1，注意用空格隔空参数
 - `生气地说 我再也不理你了` - 示例2，注意用空格隔空参数
