@@ -31,10 +31,10 @@ git clone https://github.com/Zhalslar/astrbot_plugin_GPT_SoVITS
  
 请在astrbot面板配置，插件管理 -> astrbot_plugin_memelite -> 操作 -> 插件配置
 ![tmpDD79](https://github.com/user-attachments/assets/4155ee85-c308-4775-89a8-615fd3d0c5d0)
-- GPT-SoVITS API 的 URL(base_url)：必填！GPT_SoVITS官方整合包默认为http://127.0.0.1:9880，第三方整合包可能不同
+- GPT-SoVITS API 的 URL(base_url)：必填！GPT_SoVITS官方整合包默认为http://127.0.0.1:9880， 第三方整合包可能不同
 - GPT模型文件路径(gpt_weights_path)：即“.ckpt”后缀的文件，请使用绝对路径！路径两端不要带双引号！！不填则默认用GPT_SoVITS内置的GPT模型
 - SoVITS模型文件路径(sovits_weights_path)：即“.pth”后缀的文件，请使用绝对路径，路径两端不要带双引号！！不填则默认用GPT_SoVITS内置的SoVITS模型
--默认使用的情绪(default_emotion)：内置情绪有：温柔地说、开心地说、惊讶地说、生气地说，每种情绪都可以自定义，如下图
+- 默认使用的情绪(default_emotion)：内置情绪有：温柔地说、开心地说、惊讶地说、生气地说，每种情绪都可以自定义，如下图
 ![图片](https://github.com/user-attachments/assets/475aecd6-1b20-47da-9f3a-6b18fda35f3d)
 
 
