@@ -1,32 +1,214 @@
 {
-    "base_url": {
-        "description": "GPT-SoVITS API 的 URL",
-        "type": "string",
-        "hint": "必填！具体要看自己部署GPT-SoVITS提供的API接口是什么，本插件默认为http://127.0.0.1:5000/tts",
-        "default": "http://127.0.0.1:5000/tts"
-    },
-    "default_emotion": {
-        "description": "默认使用的情绪",
-        "type": "string",
-        "hint": "内置情绪有：温柔地说、开心地说、惊讶地说、生气地说",
-        "default": "惊讶地说"
-    },
-    "save_audio": {
-        "description": "是否保存合成的音频",
-        "type": "bool",
-        "hint": "保存路径：./data/GPT_Sovits_data/saved_audio",
-        "default": false
-    },
-    "send_record_probability": {
-        "description": "发语音的概率",
-        "type": "float",
-        "hint": "将LLM请求结果从文本转化成语音（LLM）来发送的概率",
-        "default": 0.15
-    },
-    "default_tts_params": {
-        "description": "TTS合成的默认参数",
+    "base_setting": {
+        "description": "基础配置",
         "type": "object",
-        "hint": "TTS合成时，采用的的默认参数",
+        "hint": "",
+        "items": {
+            "base_url": {
+                "description": "GPT-SoVITS API 的 URL",
+                "type": "string",
+                "hint": "必填！GPT_SoVITS官方整合包默认为http://127.0.0.1:9880，第三方整合包可能不同",
+                "default": "http://127.0.0.1:9880"
+            },
+            "save_audio": {
+                "description": "是否保存合成的音频",
+                "type": "bool",
+                "hint": "保存路径：./data/GPT_Sovits_data/saved_audio",
+                "default": false
+            },
+            "send_record_probability": {
+                "description": "发语音的概率",
+                "type": "float",
+                "hint": "将LLM请求结果从文本转化成语音（LLM）来发送的概率",
+                "default": 0.15
+            }
+        }
+    },
+    "role": {
+        "description": "角色参数配置",
+        "type": "object",
+        "hint": "",
+        "items": {
+             "gpt_weights_path": {
+                "description": "GPT模型文件路径",
+                "type": "string",
+                "hint": "即“.ckpt”后缀的文件，请使用绝对路径！路径两端不要带双引号！！不填则默认用GPT_SoVITS内置的GPT模型",
+                "default": ""
+            },
+            "sovits_weights_path": {
+                "description": "SoVITS模型文件路径",
+                "type": "string",
+                "hint": "即“.pth”后缀的文件，请使用绝对路径，路径两端不要带双引号！！不填则默认用GPT_SoVITS内置的SoVITS模型",
+                "default": ""
+            },
+            "default_emotion": {
+                "description": "默认使用的情绪",
+                "type": "string",
+                "hint": "内置情绪有：温柔地说、开心地说、惊讶地说、生气地说",
+                "default": "惊讶地说"
+            }
+        }
+    },
+    "emotions": {
+        "description": "情绪配置",
+        "type": "object",
+        "hint": "",
+        "items": {
+             "gently": {
+                "description": "【温柔地说】参数配置",
+                "type": "object",
+                "hint": "",
+                "items": {
+                    "ref_audio_path": {
+                        "description": "参考音频文件路径",
+                        "type": "string",
+                        "hint": "请使用绝对路径！路径两端不要带双引号！！不填则使用插件内置的参考音频文件",
+                        "default": ""
+                    },
+                    "prompt_text": {
+                        "description": "提示文本",
+                        "type": "string",
+                        "hint": "影响语音合成的情绪",
+                        "default": ""
+                    },
+                    "prompt_lang": {
+                        "description": "提示文本的语言",
+                        "type": "string",
+                        "hint": "默认为中文",
+                        "default": "zh"
+                    },
+                    "speed_factor": {
+                        "description": "语音播放速度",
+                        "type": "float",
+                        "hint": "1为原始语速",
+                        "default": 1
+                    },
+                    "fragment_interval": {
+                        "description": "语音片段之间的间隔时间",
+                        "type": "float",
+                        "hint": "",
+                        "default": 0.7
+                    }
+                }
+            },
+            "happily": {
+                "description": "【开心地说】参数配置",
+                "type": "object",
+                "hint": "",
+                "items": {
+                    "ref_audio_path": {
+                        "description": "参考音频文件路径",
+                        "type": "string",
+                        "hint": "请使用绝对路径！路径两端不要带双引号！！不填则使用插件内置的参考音频文件",
+                        "default": ""
+                    },
+                    "prompt_text": {
+                        "description": "提示文本",
+                        "type": "string",
+                        "hint": "影响语音合成的情绪",
+                        "default": ""
+                    },
+                    "prompt_lang": {
+                        "description": "提示文本的语言",
+                        "type": "string",
+                        "hint": "默认为中文",
+                        "default": "zh"
+                    },
+                    "speed_factor": {
+                        "description": "语音播放速度",
+                        "type": "float",
+                        "hint": "1为原始语速",
+                        "default": 1.1
+                    },
+                    "fragment_interval": {
+                        "description": "语音片段之间的间隔时间",
+                        "type": "float",
+                        "hint": "",
+                        "default": 0.3
+                    }
+                }
+            },
+            "angrily": {
+                "description": "【生气地说】参数配置",
+                "type": "object",
+                "hint": "",
+                "items": {
+                    "ref_audio_path": {
+                        "description": "参考音频文件路径",
+                        "type": "string",
+                        "hint": "请使用绝对路径！路径两端不要带双引号！！不填则使用插件内置的参考音频文件",
+                        "default": ""
+                    },
+                    "prompt_text": {
+                        "description": "提示文本",
+                        "type": "string",
+                        "hint": "影响语音合成的情绪",
+                        "default": ""
+                    },
+                    "prompt_lang": {
+                        "description": "提示文本的语言",
+                        "type": "string",
+                        "hint": "默认为中文",
+                        "default": "zh"
+                    },
+                    "speed_factor": {
+                        "description": "语音播放速度",
+                        "type": "float",
+                        "hint": "1为原始语速",
+                        "default": 1.2
+                    },
+                    "fragment_interval": {
+                        "description": "语音片段之间的间隔时间",
+                        "type": "float",
+                        "hint": "",
+                        "default": 0.5
+                    }
+                }
+            },
+            "surprise": {
+                "description": "【惊讶地说】参数配置",
+                "type": "object",
+                "hint": "",
+                "items": {
+                    "ref_audio_path": {
+                        "description": "参考音频文件路径",
+                        "type": "string",
+                        "hint": "请使用绝对路径！路径两端不要带双引号！！不填则使用插件内置的参考音频文件",
+                        "default": ""
+                    },
+                    "prompt_text": {
+                        "description": "提示文本",
+                        "type": "string",
+                        "hint": "影响语音合成的情绪",
+                        "default": ""
+                    },
+                    "prompt_lang": {
+                        "description": "提示文本的语言",
+                        "type": "string",
+                        "hint": "默认为中文",
+                        "default": "zh"
+                    },
+                    "speed_factor": {
+                        "description": "语音播放速度",
+                        "type": "float",
+                        "hint": "1为原始语速",
+                        "default": 1
+                    },
+                    "fragment_interval": {
+                        "description": "语音片段之间的间隔时间",
+                        "type": "float",
+                        "hint": "",
+                        "default": 0.6
+                    }
+                }
+            }
+        }
+    },
+
+    "default_params": {
+        "description": "TTS默认参数配置",
+        "type": "object",
+        "hint": "一般情况下保持默认即可，如果你有一定的GPT_SoVITS基础，可根据个人喜好进行更改",
         "items": {
             "ref_audio_path": {
                 "description": "参考音频文件路径",
@@ -85,7 +267,7 @@
             "text_split_method": {
                 "description": "切分文本的方法",
                 "type": "string",
-                "hint": "可选值：\n`cut0`：不切分\n `cut1`：四句一切\n`cut2`：50字一切\n `cut3`：按中文句号切\n `cut4`：按英文句号切\n `cut5`：按标点符号切",
+                "hint": "可选值：  `cut0`：不切分    `cut1`：四句一切   `cut2`：50字一切    `cut3`：按中文句号切    `cut4`：按英文句号切    `cut5`：按标点符号切",
                 "default": "cut3"
             },
             "batch_size": {
