@@ -49,7 +49,7 @@ pause
 ![tmpAC40](https://github.com/user-attachments/assets/d07f59a0-7a97-478b-99b0-2ef3d207be3f)
 
 
-### 第二步，正常使用
+### 第二步，调用
 - 自动调用：调用LLM得到的文本有概率会自动转成语音发送，概率可在配置里调
 - 指令调用：
 ```bash
