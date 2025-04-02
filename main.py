@@ -174,8 +174,6 @@ class GPTSoVITSPlugin(Star):
         params.update(self.preset_emotions[emotion])
         params["text"] = text
 
-        yield event.plain_result(f"{params}")
-
         if not emotion or not text:
             return
 
