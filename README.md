@@ -66,6 +66,7 @@ python.exe api_v2.py
 - 本项目优先兼容官方整合包，第三方整合包只要不是大改的基本也能对接
 - GPT_SoVITS的部署目前我仅测试了Windows环境，更多环境下的部署请自行查阅[GPT_SoVITS官方文档](https://github.com/RVC-Boss/GPT-SoVITS/blob/main/docs/cn/README.md)
 - 想第一时间得到反馈的可以来作者的插件反馈群（QQ群）：460973561
+- 点个star支持一下呗（右上角的星星）
 
 ## TODO
 - 测试更多环境下的部署
