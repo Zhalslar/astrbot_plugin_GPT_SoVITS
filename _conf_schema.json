@@ -230,22 +230,10 @@
     },
 
     "default_params": {
-        "description": "TTS默认参数配置",
+        "description": "TTS额外参数配置",
         "type": "object",
         "hint": "一般情况下保持默认即可，如果你有一定的GPT_SoVITS基础，可根据个人喜好进行更改",
         "items": {
-            "ref_audio_path": {
-                "description": "参考音频文件路径",
-                "type": "string",
-                "hint": "",
-                "default": ""
-            },
-            "text": {
-                "description": "要转换的文本",
-                "type": "string",
-                "hint": "",
-                "default": ""
-            },
             "text_lang": {
                 "description": "文本语言",
                 "type": "string",
@@ -255,20 +243,8 @@
             "aux_ref_audio_paths": {
                 "description": "辅助参考音频文件路径列表",
                 "type": "string",
-                "hint": "",
+                "hint": "不填也行",
                 "default": ""
-            },
-            "prompt_text": {
-                "description": "提示文本",
-                "type": "string",
-                "hint": "用于影响语音合成",
-                "default": ""
-            },
-            "prompt_lang": {
-                "description": "提示文本的语言",
-                "type": "string",
-                "hint": "默认为中文",
-                "default": "zh"
             },
             "top_k": {
                 "description": "生成语音的多样性",
