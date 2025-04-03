@@ -40,7 +40,7 @@ git clone https://github.com/Zhalslar/astrbot_plugin_GPT_SoVITS
 
 ## 🐔 使用说明
 ### 第一步，启动GPT_SoVITS的API服务  
-编写一个bat批处理文件放在GPT_SoVITS整合包的根目录里，文件内容：
+- Windows下，编写一个bat批处理文件放在GPT_SoVITS整合包的根目录里，文件内容：
 ```bash
 runtime\python.exe api_v2.py
 pause
@@ -48,6 +48,11 @@ pause
 然后双击bat文件即可在终端启动GPT_SoVITS的API服务
 ![tmpAC40](https://github.com/user-attachments/assets/d07f59a0-7a97-478b-99b0-2ef3d207be3f)
 
+- Windows或者Linux下，可以直接通过命令行启动GPT_SoVITS的API服务，比如：
+```bash
+python.exe api_v2.py
+
+```
 
 ### 第二步，调用
 - 自动调用：调用LLM得到的文本有概率会自动转成语音发送，概率可在配置里调
