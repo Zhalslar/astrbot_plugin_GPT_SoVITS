@@ -17,15 +17,15 @@
                 "default": false
             },
             "send_record_probability": {
-                "description": "发语音的概率",
+                "description": "AI生成的文本转语音发送的概率",
                 "type": "float",
-                "hint": "将LLM请求结果从文本转化成语音（LLM）来发送的概率",
+                "hint": "AI生成的文本：每次对话中，LLM请求完成后得到的文本",
                 "default": 0.15
             }
         }
     },
     "role": {
-        "description": "角色参数配置",
+        "description": "角色配置",
         "type": "object",
         "hint": "",
         "items": {
@@ -44,7 +44,7 @@
             "default_emotion": {
                 "description": "默认使用的情绪",
                 "type": "string",
-                "hint": "内置情绪有：温柔地说、开心地说、惊讶地说、生气地说",
+                "hint": "在没有触发关键词或者未指定情绪时，使用默认的内置情绪，内置情绪有：温柔地说、开心地说、生气地说、惊讶地说",
                 "default": "惊讶地说"
             }
         }
@@ -86,8 +86,14 @@
                     "fragment_interval": {
                         "description": "语音片段之间的间隔时间",
                         "type": "float",
-                        "hint": "",
+                        "hint": "间隔越短，语气越急促（单位：秒）",
                         "default": 0.7
+                    },
+                    "keywords": {
+                        "description": "触发词此情绪的关键词",
+                        "type": "list",
+                        "hint": "LLM请求返回的文本中包含这些关键词时，使用此情绪合成语音",
+                        "default": ["温柔", "深情"]
                     }
                 }
             },
@@ -123,8 +129,14 @@
                     "fragment_interval": {
                         "description": "语音片段之间的间隔时间",
                         "type": "float",
-                        "hint": "",
+                        "hint": "间隔越短，语气越急促（单位：秒）",
                         "default": 0.3
+                    },
+                    "keywords": {
+                        "description": "触发词此情绪的关键词",
+                        "type": "list",
+                        "hint": "LLM请求返回的文本中包含这些关键词时，使用此情绪合成语音",
+                        "default": ["开心", "高兴"]
                     }
                 }
             },
@@ -160,8 +172,14 @@
                     "fragment_interval": {
                         "description": "语音片段之间的间隔时间",
                         "type": "float",
-                        "hint": "",
+                        "hint": "间隔越短，语气越急促（单位：秒）",
                         "default": 0.5
+                    },
+                    "keywords": {
+                        "description": "触发词此情绪的关键词",
+                        "type": "list",
+                        "hint": "LLM请求返回的文本中包含这些关键词时，使用此情绪合成语音",
+                        "default": ["生气", "哼"]
                     }
                 }
             },
@@ -197,8 +215,14 @@
                     "fragment_interval": {
                         "description": "语音片段之间的间隔时间",
                         "type": "float",
-                        "hint": "",
+                        "hint": "间隔越短，语气越急促（单位：秒）",
                         "default": 0.6
+                    },
+                    "keywords": {
+                        "description": "触发词此情绪的关键词",
+                        "type": "list",
+                        "hint": "LLM请求返回的文本中包含这些关键词时，使用此情绪合成语音",
+                        "default": ["惊讶", "啊"]
                     }
                 }
             }

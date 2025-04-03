@@ -29,75 +29,91 @@ REFERENCE_AUDIO_DIR.mkdir(parents=True, exist_ok=True)
 class GPTSoVITSPlugin(Star):
     def __init__(self, context: Context, config: AstrBotConfig):
         super().__init__(context)
-        self.base_url: str = config.get('base_setting').get('base_url')
-        self.save_audio: bool = config.get('base_setting').get("save_audio") # 是否保存合成的音频
+        base_setting = config.get('base_setting')
+        self.base_url: str = base_setting.get('base_url')
+        self.save_audio: bool = base_setting.get("save_audio") # 是否保存合成的音频
         self.save_path = None
-        self.send_record_probability: float = config.get('base_setting').get("send_record_probability")  # 发语音的概率
+        self.send_record_probability: float = base_setting.get("send_record_probability")  # 发语音的概率
 
-        self.default_emotion: str = config.get('role').get("default_emotion")  # 默认情绪预设
-        self.gpt_weights_path: str = config.get('role', {}).get('gpt_weights_path')  # GPT模型文件路径
-        self.sovits_weights_path: str = config.get('role', {}).get('sovits_weights_path')  # SoVITS模型文件路径
+        role_config = config.get('role')
+        self.default_emotion: str = role_config.get("default_emotion")  # 默认情绪预设
+        self.gpt_weights_path: str = role_config.get('gpt_weights_path')  # GPT模型文件路径
+        self.sovits_weights_path: str = role_config.get('sovits_weights_path')  # SoVITS模型文件路径
         self._set_model_weights()
 
-        self.gently_config = config.get('emotions', {}).get('gently', {})
-        self.happily_config = config.get('emotions', {}).get('happily', {})
-        self.angrily_config = config.get('emotions', {}).get('angrily', {})
-        self.surprise_config = config.get('emotions', {}).get('surprise', {})
-        self.preset_emotions = {
+        emotions_config = config.get('emotions', {})
+        gently_config = emotions_config.get('gently', {})
+        happily_config = emotions_config.get('happily', {})
+        angrily_config = emotions_config.get('angrily', {})
+        surprise_config = emotions_config.get('surprise', {})
+        self.preset_emotions: Dict = {
             "温柔地说": {
-                "ref_audio_path": self.gently_config.get('ref_audio_path') or str(REFERENCE_AUDIO_DIR / "不要害怕，也不要哭了.wav"),
-                "prompt_text": self.gently_config.get('prompt_text') or "不要害怕，也不要哭了",
-                "prompt_lang": self.gently_config.get('prompt_lang'),
-                "speed_factor": self.gently_config.get('speed_factor'),
-                "fragment_interval": self.gently_config.get('fragment_interval'),
+                "ref_audio_path": gently_config.get('ref_audio_path') or str(
+                    REFERENCE_AUDIO_DIR / "不要害怕，也不要哭了.wav"),
+                "prompt_text": gently_config.get('prompt_text') or "不要害怕，也不要哭了",
+                "prompt_lang": gently_config.get('prompt_lang'),
+                "speed_factor": gently_config.get('speed_factor'),
+                "fragment_interval": gently_config.get('fragment_interval'),
             },
             "开心地说": {
-                "ref_audio_path": self.happily_config.get('ref_audio_path') or str(REFERENCE_AUDIO_DIR / "它好像在等另一只蕈兽_心情很好的样子.wav"),
-                "prompt_text":  self.gently_config.get('prompt_text') or "它好像在等另一只蕈兽_心情很好的样子",
-                "prompt_lang": self.happily_config.get('prompt_lang'),
-                "speed_factor": self.happily_config.get('speed_factor'),
-                "fragment_interval": self.happily_config.get('fragment_interval'),
+                "ref_audio_path": happily_config.get('ref_audio_path') or str(
+                    REFERENCE_AUDIO_DIR / "它好像在等另一只蕈兽_心情很好的样子.wav"),
+                "prompt_text": happily_config.get('prompt_text') or "它好像在等另一只蕈兽_心情很好的样子",
+                "prompt_lang": happily_config.get('prompt_lang'),
+                "speed_factor": happily_config.get('speed_factor'),
+                "fragment_interval": happily_config.get('fragment_interval'),
             },
             "生气地说": {
-                "ref_audio_path": self.angrily_config.get('ref_audio_path') or str(REFERENCE_AUDIO_DIR / "你还会选择现在的位置吗？到那时，你觉得自己又会是什么呢.wav"),
-                "prompt_text":  self.gently_config.get('prompt_text') or "你还会选择现在的位置吗？到那时，你觉得自己又会是什么呢",
-                "prompt_lang": self.angrily_config.get('prompt_lang'),
-                "speed_factor": self.angrily_config.get('speed_factor'),
-                "fragment_interval": self.angrily_config.get('fragment_interval'),
+                "ref_audio_path": angrily_config.get('ref_audio_path') or str(
+                    REFERENCE_AUDIO_DIR / "你还会选择现在的位置吗？到那时，你觉得自己又会是什么呢.wav"),
+                "prompt_text": angrily_config.get(
+                    'prompt_text') or "你还会选择现在的位置吗？到那时，你觉得自己又会是什么呢",
+                "prompt_lang": angrily_config.get('prompt_lang'),
+                "speed_factor": angrily_config.get('speed_factor'),
+                "fragment_interval": angrily_config.get('fragment_interval'),
             },
             "惊讶地说": {
-                "ref_audio_path": self.surprise_config.get('ref_audio_path') or str(REFERENCE_AUDIO_DIR / "就算是这样，也不至于直接碎掉啊，除非.wav"),
-                "prompt_text": self.gently_config.get('prompt_text') or "就算是这样，也不至于直接碎掉啊，除非",
-                "prompt_lang": self.surprise_config.get('prompt_lang'),
-                "speed_factor": self.surprise_config.get('speed_factor'),
-                "fragment_interval": self.surprise_config.get('fragment_interval'),
+                "ref_audio_path": surprise_config.get('ref_audio_path') or str(
+                    REFERENCE_AUDIO_DIR / "就算是这样，也不至于直接碎掉啊，除非.wav"),
+                "prompt_text": surprise_config.get('prompt_text') or "就算是这样，也不至于直接碎掉啊，除非",
+                "prompt_lang": surprise_config.get('prompt_lang'),
+                "speed_factor": surprise_config.get('speed_factor'),
+                "fragment_interval": surprise_config.get('fragment_interval'),
             }
         }
         self.preset_emotions_set = set(self.preset_emotions.keys())
 
+        self.keywords_dict = {
+            "温柔地说": gently_config.get('keywords'),
+            "开心地说": happily_config.get('keywords'),
+            "生气地说": angrily_config.get('keywords'),
+            "惊讶地说": surprise_config.get('keywords')
+        }
 
-        self.params = config.get('default_params')
-        self.default_params: Dict = {
-            "ref_audio_path": self.params.get('ref_audio_path',""),  # 参考音频文件路径
-            "text": self.params.get('text', ""),  # 要转换的文本
-            "text_lang": self.params.get('text_lang', "zh"),  # 文本语言，默认为中文
-            "aux_ref_audio_paths": self.params.get('prompt_text', None),   # 辅助参考音频文件路径列表
-            "prompt_text": self.params.get('prompt_text', ""),  # 提示文本，用于影响语音合成
-            "prompt_lang": self.params.get('prompt_lang', "zh"),  # 提示文本的语言，默认为中文
-            "top_k": self.params.get('top_k', 5),  # 控制生成语音的多样性
-            "top_p": self.params.get('top_p', 1.0),  # 核采样的阈值
-            "temperature": self.params.get('temperature', 1.0),  # 控制生成语音的随机性
-            "text_split_method": self.params.get('text_split_method', "cut3"),  # 文本分割的方法
-            "batch_size": self.params.get('batch_size', 1),  # 批处理大小
-            "batch_threshold": self.params.get('batch_threshold', 0.75),  # 批处理阈值
-            "split_bucket": self.params.get('split_bucket', True),  # 是否将文本分割成桶以便并行处理
-            "speed_factor": self.params.get('speed_factor', 1),  # 语音播放速度的倍数
-            "fragment_interval": self.params.get('fragment_interval', 0.3),  # 语音片段之间的间隔时间
-            "streaming_mode": config.get('streaming_mode', False),  # 是否启用流模式
-            "seed": self.params.get('seed', -1),  # 随机种子，用于结果的可重复性
-            "parallel_infer": self.params.get('parallel_infer', True),  # 是否并行执行推理
-            "repetition_penalty": config.get('repetition_penalty', 1.35),  # 重复惩罚因子
-            "media_type": self.params.get('media_type', 'wav'),  # 输出媒体的类型
+
+        self.default_params = {
+            k: config.get('default_params').get(k)
+            for k in [
+                "ref_audio_path",
+                "text", "text_lang",
+                "aux_ref_audio_paths",
+                "prompt_text",
+                "prompt_lang",
+                "top_k",
+                "top_p",
+                "temperature",
+                "text_split_method",
+                "batch_size",
+                "batch_threshold",
+                "split_bucket",
+                "speed_factor",
+                "fragment_interval",
+                "streaming_mode",
+                "seed",
+                "parallel_infer",
+                "repetition_penalty",
+                "media_type"
+            ]
         }
 
     def _set_model_weights(self):
@@ -156,11 +172,19 @@ class GPTSoVITSPlugin(Star):
         """将LLM生成的文本按概率生成语音并发送"""
         if random.random() > self.send_record_probability:
             return
-
+        send_text = event.message_str
+        resp_text = resp.completion_text
         emotion = self.default_emotion
-        text = resp.completion_text
+        for emo, keywords in self.keywords_dict.items():
+            for keyword in keywords:
+                if keyword in send_text or keyword in resp_text:
+                    emotion = emo
+                    break
+            else:
+                continue
+            break
 
-        await self.generate_and_send_tts(event, text, emotion)
+        await self.generate_and_send_tts(event, resp_text, emotion)
 
 
     @filter.command("说", alias={"温柔地说", "开心地说", "生气地说", "惊讶地说", })
