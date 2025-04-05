@@ -27,8 +27,10 @@ class GPTSoVITSPlugin(Star):
         super().__init__(context)
         base_setting = config.get('base_setting')
         self.base_url: str = base_setting.get('base_url')
-        self.save_audio: bool = base_setting.get("save_audio") # 是否保存合成的音频
-        self.send_record_probability: float = base_setting.get("send_record_probability")  # 发语音的概率
+
+        auto_config: Dict = config.get('auto_config')
+        self.send_record_probability: float = auto_config.get("send_record_probability")  # 发语音的概率
+        self.max_resp_text_len: int = auto_config.get('max_resp_text_len')
 
         role_config = config.get('role')
         self.default_emotion: str = role_config.get("default_emotion")  # 默认情绪预设
@@ -129,6 +131,11 @@ class GPTSoVITSPlugin(Star):
             return
 
         resp_text = seg.text  # ai生成的文本
+
+        # 仅允许一定长度以下的文本通过
+        if len(resp_text) > self.max_resp_text_len:
+            return
+
         send_text = event.message_str # 用户发送的文本
 
         # 根据 ai生成的文本 和 用户发送的文本 匹配关键词，从而选择情绪
@@ -156,9 +163,6 @@ class GPTSoVITSPlugin(Star):
         chain.clear() # 清空消息段
         chain.append(Record.fromFileSystem(save_path)) # 新增语音消息段
 
-        if not self.save_audio: # 删除缓存
-            os.remove(save_path)
-
 
 
     @filter.command("说", alias={"温柔地说", "开心地说", "生气地说", "惊讶地说", })
@@ -184,9 +188,6 @@ class GPTSoVITSPlugin(Star):
 
         chain = [Record.fromFileSystem(save_path)]
         yield event.chain_result(chain)
-
-        if not save_path:
-            os.remove(save_path)
 
 
     def generate_file_name(self,event: AstrMessageEvent, params) -> str:

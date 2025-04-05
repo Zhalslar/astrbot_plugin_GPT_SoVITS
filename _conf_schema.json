@@ -9,18 +9,25 @@
                 "type": "string",
                 "hint": "必填！GPT_SoVITS官方整合包默认为http://127.0.0.1:9880，第三方整合包可能不同",
                 "default": "http://127.0.0.1:9880"
-            },
-            "save_audio": {
-                "description": "是否保存合成的音频",
-                "type": "bool",
-                "hint": "保存路径：./data/GPT_Sovits_data/saved_audio",
-                "default": false
-            },
+            }
+        }
+    },
+    "auto_config": {
+        "description": "主动调用配置",
+        "type": "object",
+        "hint": "本插件有一定概率主动将bot本来要发送的文本转成语音发送",
+        "items": {
             "send_record_probability": {
-                "description": "AI生成的文本转语音发送的概率",
+                "description": "主动转语音发送的概率",
                 "type": "float",
-                "hint": "AI生成的文本：每次对话中，LLM请求完成后得到的文本",
+                "hint": "",
                 "default": 0.15
+            },
+            "max_resp_text_len": {
+                "description": "文本长度限制",
+                "type": "int",
+                "hint": "超过此长度的文本不会被转成语音发送",
+                "default": 50
             }
         }
     },
