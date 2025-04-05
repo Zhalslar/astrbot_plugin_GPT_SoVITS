@@ -1,8 +1,6 @@
 
-
 import os
 import re
-from datetime import datetime
 import random
 
 import requests
@@ -10,29 +8,26 @@ from astrbot import logger
 from astrbot.api.event import filter
 from astrbot.api.star import Context, Star, register
 from astrbot.core import AstrBotConfig
+from astrbot.core.message.components import Record
 from astrbot.core.platform import AstrMessageEvent
-import astrbot.api.message_components as Comp
 from pathlib import Path
 from typing import Dict
 from astrbot.api.provider import LLMResponse
 
-SAVED_AUDIO_DIR = Path("./data/GPT_Sovits_data/saved_audio")  # 语音文件保存目录
+SAVED_AUDIO_DIR = Path("./data/plugins_data/astrbot_plugin_GPT_SoVITS")  # 语音文件保存目录
 REFERENCE_AUDIO_DIR: Path =  Path(__file__).resolve().parent / "reference_audio"  # 参考音频文件目录
 
 SAVED_AUDIO_DIR.mkdir(parents=True, exist_ok=True)
 REFERENCE_AUDIO_DIR.mkdir(parents=True, exist_ok=True)
 
 
-
-
-@register("astrbot_plugin_GPT_SoVITS", "Zhalslar", "GPT_SoVITS对接插件", "1.0.0", "https://github.com/Zhalslar/astrbot_plugin_GPT_SoVITS")
+@register("astrbot_plugin_GPT_SoVITS", "Zhalslar", "GPT_SoVITS对接插件", "1.1.3")
 class GPTSoVITSPlugin(Star):
     def __init__(self, context: Context, config: AstrBotConfig):
         super().__init__(context)
         base_setting = config.get('base_setting')
         self.base_url: str = base_setting.get('base_url')
         self.save_audio: bool = base_setting.get("save_audio") # 是否保存合成的音频
-        self.save_path = None
         self.send_record_probability: float = base_setting.get("send_record_probability")  # 发语音的概率
 
         role_config = config.get('role')
@@ -90,90 +85,53 @@ class GPTSoVITSPlugin(Star):
             "惊讶地说": surprise_config.get('keywords')
         }
 
+        self.default_params = config.get('default_params') # 额外参数
 
-        self.default_params = {
-            k: config.get('default_params').get(k)
-            for k in [
-                "ref_audio_path",
-                "text", "text_lang",
-                "aux_ref_audio_paths",
-                "prompt_text",
-                "prompt_lang",
-                "top_k",
-                "top_p",
-                "temperature",
-                "text_split_method",
-                "batch_size",
-                "batch_threshold",
-                "split_bucket",
-                "speed_factor",
-                "fragment_interval",
-                "streaming_mode",
-                "seed",
-                "parallel_infer",
-                "repetition_penalty",
-                "media_type"
-            ]
-        }
 
     def _set_model_weights(self):
-        """设置模型权重路径"""
+        """设置模型"""
         try:
-            # 设置 GPT 模型权重
+            # 设置 GPT 模型
             if self.gpt_weights_path:
                 gpt_endpoint = f"{self.base_url}/set_gpt_weights"
                 gpt_params = {"weights_path": self.gpt_weights_path}
                 response = requests.get(gpt_endpoint, params=gpt_params)
                 response.raise_for_status()
-                logger.info(f"成功设置 GPT 模型权重路径：{self.gpt_weights_path}")
+                logger.info(f"成功设置 GPT 模型路径：{self.gpt_weights_path}")
             else:
-                logger.info("GPT 模型权重路径未配置，将使用GPT_SoVITS内置的GPT模型")
+                logger.info("GPT 模型路径未配置，将使用GPT_SoVITS内置的GPT模型")
 
-            # 设置 SoVITS 模型权重
+            # 设置 SoVITS 模型
             if self.sovits_weights_path:
                 sovits_endpoint = f"{self.base_url}/set_sovits_weights"
                 sovits_params = {"weights_path": self.sovits_weights_path}
                 response = requests.get(sovits_endpoint, params=sovits_params)
                 response.raise_for_status()
-                logger.info(f"成功设置 SoVITS 模型权重路径：{self.sovits_weights_path}")
+                logger.info(f"成功设置 SoVITS 模型路径：{self.sovits_weights_path}")
             else:
-                logger.info("SoVITS 模型权重路径未配置，将使用GPT_SoVITS内置的SoVITS模型")
+                logger.info("SoVITS 模型路径未配置，将使用GPT_SoVITS内置的SoVITS模型")
         except requests.RequestException as e:
-            logger.error(f"设置模型权重路径时发生错误：{e}")
+            logger.error(f"设置模型路径时发生错误：{e}")
 
 
-
-    async def generate_and_send_tts(self, event: AstrMessageEvent, text: str, emotion: str):
-        """生成TTS语音并发送"""
-        group_id = event.get_group_id()
-        sender_id = event.get_sender_id()
-
-        params = self.default_params.copy()
-        params.update(self.preset_emotions[emotion])
-        params["text"] = text
-
-        file_name = self.generate_file_name(params=params, group_id=group_id, user_id=sender_id)
-        await self.tts_inference(params=params, file_name=file_name)
-
-        if self.save_path is None:
-            logger.error("TTS任务执行失败！")
-            return
-
-        record = Comp.Record(file=self.save_path)
-        result = event.chain_result([record])
-        await event.send(result)
-        if not self.save_audio:
-            os.remove(self.save_path)
-        event.stop_event()  # 停止事件传播
-
-    # 在 LLM 请求完成后，触发 on_llm_response 钩子
-    @filter.on_llm_response()
-    async def on_llm_response(self, event: AstrMessageEvent, resp: LLMResponse):
+    # 在发送消息前，会触发 on_decorating_result 钩子
+    @filter.on_decorating_result()
+    async def on_llm_response(self, event: AstrMessageEvent):
         """将LLM生成的文本按概率生成语音并发送"""
-        if random.random() > self.send_record_probability:
+        if random.random() > self.send_record_probability:  # 概率控制
             return
-        send_text = event.message_str
-        resp_text = resp.completion_text
+
+        chain = event.get_result().chain
+        seg = chain[0]
+
+        # 仅允许只含有单条文本的消息链通过
+        if not (len(chain) == 1 and seg.type=='Plain'):
+            return
+
+        resp_text = seg.text  # ai生成的文本
+        send_text = event.message_str # 用户发送的文本
+
+        # 根据 ai生成的文本 和 用户发送的文本 匹配关键词，从而选择情绪
         emotion = self.default_emotion
         for emo, keywords in self.keywords_dict.items():
             for keyword in keywords:
@@ -184,11 +142,27 @@ class GPTSoVITSPlugin(Star):
                 continue
             break
 
-        await self.generate_and_send_tts(event, resp_text, emotion)
+        params = self.default_params.copy()
+        params.update(self.preset_emotions[emotion]) # 传递情绪参数
+        params["text"] = resp_text # 传递文本参数
+
+        file_name = self.generate_file_name(event, params=params) # 生成文件名
+        save_path = await self.tts_inference(params=params, file_name=file_name)  # 生成语音
+
+        if save_path is None:
+            logger.error("TTS任务执行失败！")
+            return
+
+        chain.clear() # 清空消息段
+        chain.append(Record.fromFileSystem(save_path)) # 新增语音消息段
+
+        if not self.save_audio: # 删除缓存
+            os.remove(save_path)
+
 
 
     @filter.command("说", alias={"温柔地说", "开心地说", "生气地说", "惊讶地说", })
-    async def on_regex(self, event: AstrMessageEvent, text: str = None):
+    async def on_regex(self, event: AstrMessageEvent, send_text: str = None):
         """xxx说xxx，直接调用TTS，发送合成后的语音"""
         message_str = event.get_message_str()
 
@@ -196,21 +170,33 @@ class GPTSoVITSPlugin(Star):
 
         params = self.default_params.copy()
         params.update(self.preset_emotions[emotion])
-        params["text"] = text
+        params["text"] = send_text
 
-        if not emotion or not text:
+        if not emotion or not send_text:
             return
 
-        await self.generate_and_send_tts(event, text, emotion)
+        file_name = self.generate_file_name(event, params=params)
+        save_path = await self.tts_inference(params=params, file_name=file_name)
+
+        if save_path is None:
+            logger.error("TTS任务执行失败！")
+            return
+
+        chain = [Record.fromFileSystem(save_path)]
+        yield event.chain_result(chain)
+
+        if not save_path:
+            os.remove(save_path)
 
 
-    def generate_file_name(self, params, group_id: str = "0", user_id: str = "0") -> str:
+    def generate_file_name(self,event: AstrMessageEvent, params) -> str:
         """生成文件名"""
+        group_id = event.get_group_id() or '0'
+        sender_id = event.get_sender_id() or '0'
         sanitized_text = re.sub(r'[^a-zA-Z0-9\u4e00-\u9fff\s]', '', params["text"])
         limit_text = sanitized_text[:30]  # 限制长度
         media_type = self.default_params["media_type"]
-        current_time = datetime.now().strftime("%Y%m%d_%H%M%S")  # 格式化为年月日_时分秒
-        file_name = f"{group_id}_{user_id}_{limit_text}_{current_time}.{media_type}"
+        file_name = f"{group_id}_{sender_id}_{limit_text}.{media_type}"
         return file_name
 
 
@@ -221,14 +207,15 @@ class GPTSoVITSPlugin(Star):
         if response.status_code != 200:
             return None
         audio_bytes: bytes = response.content
-        self.save_path = str(SAVED_AUDIO_DIR / file_name)
-        with open(self.save_path, 'wb') as audio_file:
+        save_path = str(SAVED_AUDIO_DIR / file_name)
+        with open(save_path, 'wb') as audio_file:
             audio_file.write(audio_bytes)
-        return self.save_path
+        return save_path
 
 
     @filter.command("重启TTS", alias={"重启tts"})
     async def tts_control(self,event: AstrMessageEvent):
+        """重启GPT_SoVITS"""
         yield event.plain_result(f"重启TTS中...(报错信息请忽略，等待一会即可完成重启)")
         endpoint = f"{self.base_url}/control"
         params = {"command": "restart"}
