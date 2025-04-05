@@ -50,7 +50,9 @@ pause
 
 - Windows或者Linux下，可以直接通过命令行启动GPT_SoVITS的API服务，比如：
 ```bash
-python.exe api_v2.py
+python api_v2.py
+也可能是
+python3 api_v2.py
 
 ```
 
