@@ -1,5 +1,4 @@
 
-import os
 import re
 import random
 
@@ -195,7 +194,7 @@ class GPTSoVITSPlugin(Star):
         group_id = event.get_group_id() or '0'
         sender_id = event.get_sender_id() or '0'
         sanitized_text = re.sub(r'[^a-zA-Z0-9\u4e00-\u9fff\s]', '', params["text"])
-        limit_text = sanitized_text[:30]  # 限制长度
+        limit_text = sanitized_text.strip()[:30]  # 限制长度
         media_type = self.default_params["media_type"]
         file_name = f"{group_id}_{sender_id}_{limit_text}.{media_type}"
         return file_name
