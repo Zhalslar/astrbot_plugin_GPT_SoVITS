@@ -12,6 +12,7 @@ import astrbot.core.message.components as Comp
 from pathlib import Path
 from typing import Dict
 
+
 SAVED_AUDIO_DIR = Path(
     "./data/plugins_data/astrbot_plugin_GPT_SoVITS"
 )  # 语音文件保存目录
@@ -23,7 +24,13 @@ SAVED_AUDIO_DIR.mkdir(parents=True, exist_ok=True)
 REFERENCE_AUDIO_DIR.mkdir(parents=True, exist_ok=True)
 
 
-@register("astrbot_plugin_GPT_SoVITS", "Zhalslar", "GPT_SoVITS对接插件", "1.1.3")
+@register(
+    "astrbot_plugin_GPT_SoVITS",
+    "Zhalslar",
+    "GPT_SoVITS对接插件",
+    "1.1.9",
+    "https://github.com/Zhalslar/astrbot_plugin_GPT_SoVITS",
+)
 class GPTSoVITSPlugin(Star):
     def __init__(self, context: Context, config: AstrBotConfig):
         super().__init__(context)
@@ -206,7 +213,7 @@ class GPTSoVITSPlugin(Star):
             "惊讶地说",
         },
     )
-    async def on_regex(
+    async def on_command(
         self, event: AstrMessageEvent, send_text: str | int | None = None
     ):
         """/xx地说 xxx，直接调用TTS，发送合成后的语音"""
@@ -248,7 +255,7 @@ class GPTSoVITSPlugin(Star):
     async def tts_inference(self, params, file_name: str) -> str | None:
         """发送TTS请求，获取音频内容"""
         endpoint = f"{self.base_url}/tts"
-        save_path = str(SAVED_AUDIO_DIR / file_name)
+        save_path = str((SAVED_AUDIO_DIR / file_name).resolve())
         audio_bytes = await self._make_request(endpoint=endpoint, params=params)
         if audio_bytes:
             with open(save_path, "wb") as audio_file:
@@ -262,3 +269,20 @@ class GPTSoVITSPlugin(Star):
         endpoint = f"{self.base_url}/control"
         params = {"command": "restart"}
         await self._make_request(endpoint=endpoint, params=params)
+
+    async def tts_sever(self, text: str, file_name: str) -> str | None:
+        """提供给其他插件调用的TTS服务"""
+        emotion = self.default_emotion
+
+        # 根据关键词匹配情绪
+        for emo, keywords in self.keywords_dict.items():
+            for keyword in keywords:
+                if keyword in text:
+                    emotion = emo
+                    break
+        params = self.default_params.copy()
+        params.update(self.preset_emotions[emotion])
+        params["text"] = text
+
+        save_path = await self.tts_inference(params=params, file_name=file_name)
+        return save_path
