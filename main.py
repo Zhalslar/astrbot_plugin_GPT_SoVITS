@@ -10,15 +10,15 @@ from astrbot.core.message.components import Record
 from astrbot.core.platform import AstrMessageEvent
 import astrbot.core.message.components as Comp
 from pathlib import Path
-from typing import Dict
+from typing import Dict, Any # 1. 导入 Any
 
 
 SAVED_AUDIO_DIR = Path(
     "./data/plugins_data/astrbot_plugin_GPT_SoVITS"
-)  # 语音文件保存目录
+)
 REFERENCE_AUDIO_DIR: Path = (
     Path(__file__).resolve().parent / "reference_audio"
-)  # 参考音频文件目录
+)
 
 SAVED_AUDIO_DIR.mkdir(parents=True, exist_ok=True)
 REFERENCE_AUDIO_DIR.mkdir(parents=True, exist_ok=True)
@@ -28,7 +28,7 @@ REFERENCE_AUDIO_DIR.mkdir(parents=True, exist_ok=True)
     "astrbot_plugin_GPT_SoVITS",
     "Zhalslar",
     "GPT_SoVITS对接插件",
-    "1.1.9",
+    "1.2.0", # 建议更新一下版本号
     "https://github.com/Zhalslar/astrbot_plugin_GPT_SoVITS",
 )
 class GPTSoVITSPlugin(Star):
@@ -46,7 +46,7 @@ class GPTSoVITSPlugin(Star):
         role_config: Dict = config.get("role", {})
         self.default_emotion: str = role_config.get(
             "default_emotion", "生气地"
-        )  # 默认情绪预设
+        )
         self.gpt_weights_path: str = role_config.get("gpt_weights_path", "")
         self.sovits_weights_path: str = role_config.get("sovits_weights_path", "")
         asyncio.create_task(self._set_model_weights())
@@ -100,38 +100,83 @@ class GPTSoVITSPlugin(Star):
             },
         }
         self.preset_emotions_set = set(self.preset_emotions.keys())
-
         self.keywords_dict = {
             "温柔地说": gently_config.get("keywords"),
             "开心地说": happily_config.get("keywords"),
             "生气地说": angrily_config.get("keywords"),
             "惊讶地说": surprise_config.get("keywords"),
         }
+        self.default_params: Dict = config.get("default_params", {})
 
-        self.default_params: Dict = config.get("default_params", {})  # 额外参数
+    # --- START OF MODIFIED CODE ---
 
     async def _make_request(
         self,
         endpoint: str,
-        params=None,
+        method: str = "GET",
+        params: Dict[str, Any] | None = None,
+        json_data: Dict[str, Any] | None = None,
     ) -> None | bytes:
-        """通用的异步请求方法"""
-        if params:
-            params = {
+        """
+        通用的异步请求方法，现在支持GET和POST。
+        - params: 用于GET请求的URL查询参数。
+        - json_data: 用于POST请求的JSON请求体。
+        """
+        # 对布尔值进行预处理
+        payload = params or json_data
+        if payload:
+            payload = {
                 k: str(v).lower() if isinstance(v, bool) else v
-                for k, v in params.items()
+                for k, v in payload.items()
             }
-        async with aiohttp.ClientSession() as session:
-            async with session.request("GET", endpoint, params=params) as response:
-                if response.status != 200:
-                    return None
-                audio_bytes = await response.read()
-                return audio_bytes
+            if method.upper() == "POST":
+                json_data = payload
+                params = None
+            else:
+                params = payload
+                json_data = None
+        
+        headers = {'Content-Type': 'application/json'} if method.upper() == "POST" else None
 
+        async with aiohttp.ClientSession(headers=headers) as session:
+            try:
+                # 使用 session.request 动态选择方法
+                async with session.request(
+                    method.upper(), endpoint, params=params, json=json_data
+                ) as response:
+                    response.raise_for_status() # 如果状态码不是2xx，则抛出异常
+                    content = await response.read()
+                    return content
+            except aiohttp.ClientError as e:
+                logger.error(f"Request to {endpoint} failed: {e}")
+                return None
+
+    # ... (on_decorating_result 和 on_command 保持不变) ...
+    
+    async def tts_inference(self, params, file_name: str) -> str | None:
+        """发送TTS请求，获取音频内容"""
+        endpoint = f"{self.base_url}/tts"
+        save_path = str((SAVED_AUDIO_DIR / file_name).resolve())
+        
+        # --- 关键修改：明确使用POST方法，并将params作为json_data传递 ---
+        audio_bytes = await self._make_request(
+            endpoint=endpoint, 
+            method="POST",       # 指定方法为 POST
+            json_data=params     # 指定负载为 JSON Body
+        )
+        
+        if audio_bytes:
+            with open(save_path, "wb") as audio_file:
+                audio_file.write(audio_bytes)
+            return save_path
+
+    # --- END OF MODIFIED CODE ---
+    
+    # ... (从 _set_model_weights 到文件结尾的所有其他函数都保持不变) ...
+    
     async def _set_model_weights(self):
         """设置模型"""
         try:
-            # 设置 GPT 模型
             if self.gpt_weights_path:
                 gpt_endpoint = f"{self.base_url}/set_gpt_weights"
                 gpt_params = {"weights_path": self.gpt_weights_path}
@@ -139,8 +184,6 @@ class GPTSoVITSPlugin(Star):
                     logger.info(f"成功设置 GPT 模型路径：{self.gpt_weights_path}")
             else:
                 logger.info("GPT 模型路径未配置，将使用GPT_SoVITS内置的GPT模型")
-
-            # 设置 SoVITS 模型
             if self.sovits_weights_path:
                 sovits_endpoint = f"{self.base_url}/set_sovits_weights"
                 sovits_params = {"weights_path": self.sovits_weights_path}
@@ -155,29 +198,18 @@ class GPTSoVITSPlugin(Star):
         except Exception as e:
             logger.error(f"发生未知错误：{e}")
 
-    # 在发送消息前，会触发 on_decorating_result 钩子
     @filter.on_decorating_result()
     async def on_decorating_result(self, event: AstrMessageEvent):
-        """将LLM生成的文本按概率生成语音并发送"""
-        if random.random() > self.send_record_probability:  # 概率控制
+        if random.random() > self.send_record_probability:
             return
-
         chain = event.get_result().chain
         seg = chain[0]
-
-        # 仅允许只含有单条文本的消息链通过
         if not (len(chain) == 1 and isinstance(seg, Comp.Plain)):
             return
-
-        resp_text = seg.text  # bot将要发送的的文本
-
-        # 仅允许一定长度以下的文本通过
+        resp_text = seg.text
         if len(resp_text) > self.max_resp_text_len:
             return
-
-        send_text = event.message_str  # 用户发送的文本
-
-        # 根据 ai生成的文本 和 用户发送的文本 匹配关键词，从而选择情绪
+        send_text = event.message_str
         emotion = self.default_emotion
         for emo, keywords in self.keywords_dict.items():
             for keyword in keywords:
@@ -187,36 +219,28 @@ class GPTSoVITSPlugin(Star):
             else:
                 continue
             break
-
         params = self.default_params.copy()
-        params.update(self.preset_emotions[emotion])  # 传递情绪参数
-        params["text"] = resp_text  # 传递文本参数
-
-        file_name = self.generate_file_name(event, params=params)  # 生成文件名
+        params.update(self.preset_emotions[emotion])
+        params["text"] = resp_text
+        file_name = self.generate_file_name(event, params=params)
         save_path = await self.tts_inference(
             params=params, file_name=file_name
-        )  # 生成语音
-
+        )
         if save_path is None:
             logger.error("TTS任务执行失败！")
             return
-
-        chain.clear()  # 清空消息段
-        chain.append(Record.fromFileSystem(save_path))  # 新增语音消息段
+        chain.clear()
+        chain.append(Record.fromFileSystem(save_path))
 
     @filter.command(
         "说",
         alias={
-            "温柔地说",
-            "开心地说",
-            "生气地说",
-            "惊讶地说",
+            "温柔地说", "开心地说", "生气地说", "惊讶地说",
         },
     )
     async def on_command(
         self, event: AstrMessageEvent, send_text: str | int | None = None
     ):
-        """/xx地说 xxx，直接调用TTS，发送合成后的语音"""
         if not send_text:
             yield event.plain_result("未提供文本")
             return
@@ -228,53 +252,34 @@ class GPTSoVITSPlugin(Star):
         params = self.default_params.copy()
         params.update(self.preset_emotions[emotion])
         params["text"] = send_text
-
         if not emotion or not send_text:
             return
-
         file_name = self.generate_file_name(event, params=params)
         save_path = await self.tts_inference(params=params, file_name=file_name)
-
         if save_path is None:
             logger.error("TTS任务执行失败！")
             return
-
         chain = [Record.fromFileSystem(save_path)]
-        yield event.chain_result(chain)  # type: ignore
+        yield event.chain_result(chain)
 
     def generate_file_name(self, event: AstrMessageEvent, params) -> str:
-        """生成文件名"""
         group_id = event.get_group_id() or "0"
         sender_id = event.get_sender_id() or "0"
         sanitized_text = re.sub(r"[^a-zA-Z0-9\u4e00-\u9fff\s]", "", params["text"])
-        limit_text = sanitized_text.strip()[:30]  # 限制长度
+        limit_text = sanitized_text.strip()[:30]
         media_type = self.default_params["media_type"]
         file_name = f"{group_id}_{sender_id}_{limit_text}.{media_type}"
         return file_name
 
-    async def tts_inference(self, params, file_name: str) -> str | None:
-        """发送TTS请求，获取音频内容"""
-        endpoint = f"{self.base_url}/tts"
-        save_path = str((SAVED_AUDIO_DIR / file_name).resolve())
-        audio_bytes = await self._make_request(endpoint=endpoint, params=params)
-        if audio_bytes:
-            with open(save_path, "wb") as audio_file:
-                audio_file.write(audio_bytes)
-            return save_path
-
     @filter.command("重启TTS", alias={"重启tts"})
     async def tts_control(self, event: AstrMessageEvent):
-        """重启GPT_SoVITS"""
         yield event.plain_result("重启TTS中...(报错信息请忽略，等待一会即可完成重启)")
         endpoint = f"{self.base_url}/control"
         params = {"command": "restart"}
         await self._make_request(endpoint=endpoint, params=params)
 
     async def tts_sever(self, text: str, file_name: str) -> str | None:
-        """提供给其他插件调用的TTS服务"""
         emotion = self.default_emotion
-
-        # 根据关键词匹配情绪
         for emo, keywords in self.keywords_dict.items():
             for keyword in keywords:
                 if keyword in text:
@@ -283,6 +288,5 @@ class GPTSoVITSPlugin(Star):
         params = self.default_params.copy()
         params.update(self.preset_emotions[emotion])
         params["text"] = text
-
         save_path = await self.tts_inference(params=params, file_name=file_name)
         return save_path
