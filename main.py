@@ -90,8 +90,6 @@ class GPTSoVITSPlugin(Star):
         if not self.gsv:
             return
         cmd, _, text = event.message_str.partition(" ")
-        if not text:
-            return
         emotion = self.gsv.find_emotion(cmd)
         audio_path = await self.gsv.inference(text, emotion)
         if audio_path is None:

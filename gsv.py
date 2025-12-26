@@ -131,11 +131,11 @@ class GPTSoVITSCore:
             emotion = self.find_emotion(text)
 
         if emotion:
-            cfg = self.emotions[emotion].copy()
+            cfg = self.emotions.get(emotion, {}).copy()
             cfg.pop("keywords", None)
             params.update(cfg)
-
-        params["text"] = text
+        if text:
+            params["text"] = text
 
         result = await self._request(
             f"{self.base_url}/tts",
