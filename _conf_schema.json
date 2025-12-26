@@ -224,6 +224,15 @@
                 "type": "object",
                 "hint": "",
                 "items": {
+                    "keywords": {
+                        "description": "触发词此情绪的关键词",
+                        "type": "list",
+                        "hint": "用户发送的文本 或者 AI回答的文本中包含这些关键词时，使用此情绪合成语音",
+                        "default": [
+                            "温柔",
+                            "深情"
+                        ]
+                    },
                     "ref_audio_path": {
                         "description": "参考音频文件路径",
                         "type": "string",
@@ -246,22 +255,23 @@
                         "description": "语音播放速度",
                         "type": "float",
                         "hint": "1为原始语速",
+                        "slider": {
+                            "min": 0.5,
+                            "max": 2,
+                            "step": 0.1
+                        },
                         "default": 1
                     },
                     "fragment_interval": {
                         "description": "语音片段之间的间隔时间",
                         "type": "float",
                         "hint": "间隔越短，语气越急促（单位：秒）",
+                        "slider": {
+                            "min": 0.1,
+                            "max": 2,
+                            "step": 0.1
+                        },
                         "default": 0.7
-                    },
-                    "keywords": {
-                        "description": "触发词此情绪的关键词",
-                        "type": "list",
-                        "hint": "用户发送的文本 或者 AI回答的文本中包含这些关键词时，使用此情绪合成语音",
-                        "default": [
-                            "温柔",
-                            "深情"
-                        ]
                     }
                 }
             },
@@ -270,6 +280,15 @@
                 "type": "object",
                 "hint": "",
                 "items": {
+                    "keywords": {
+                        "description": "触发词此情绪的关键词",
+                        "type": "list",
+                        "hint": "用户发送的文本 或者 AI回答的文本中包含这些关键词时，使用此情绪合成语音",
+                        "default": [
+                            "开心",
+                            "高兴"
+                        ]
+                    },
                     "ref_audio_path": {
                         "description": "参考音频文件路径",
                         "type": "string",
@@ -292,22 +311,23 @@
                         "description": "语音播放速度",
                         "type": "float",
                         "hint": "1为原始语速",
+                        "slider": {
+                            "min": 0.5,
+                            "max": 2,
+                            "step": 0.1
+                        },
                         "default": 1.1
                     },
                     "fragment_interval": {
                         "description": "语音片段之间的间隔时间",
                         "type": "float",
                         "hint": "间隔越短，语气越急促（单位：秒）",
+                        "slider": {
+                            "min": 0.1,
+                            "max": 2,
+                            "step": 0.1
+                        },
                         "default": 0.3
-                    },
-                    "keywords": {
-                        "description": "触发词此情绪的关键词",
-                        "type": "list",
-                        "hint": "用户发送的文本 或者 AI回答的文本中包含这些关键词时，使用此情绪合成语音",
-                        "default": [
-                            "开心",
-                            "高兴"
-                        ]
                     }
                 }
             },
@@ -316,6 +336,27 @@
                 "type": "object",
                 "hint": "",
                 "items": {
+                    "keywords": {
+                        "description": "触发词此情绪的关键词",
+                        "type": "list",
+                        "hint": "用户发送的文本 或者 AI回答的文本中包含这些关键词时，使用此情绪合成语音",
+                        "default": [
+                            "生气",
+                            "哼",
+                            "尼玛",
+                            "妈",
+                            "操",
+                            "艹",
+                            "逼",
+                            "爹",
+                            "玩意",
+                            "滚",
+                            "鸡巴",
+                            "老子",
+                            "屎",
+                            "死"
+                        ]
+                    },
                     "ref_audio_path": {
                         "description": "参考音频文件路径",
                         "type": "string",
@@ -338,34 +379,23 @@
                         "description": "语音播放速度",
                         "type": "float",
                         "hint": "1为原始语速",
+                        "slider": {
+                            "min": 0.5,
+                            "max": 2,
+                            "step": 0.1
+                        },
                         "default": 1.2
                     },
                     "fragment_interval": {
                         "description": "语音片段之间的间隔时间",
                         "type": "float",
                         "hint": "间隔越短，语气越急促（单位：秒）",
+                        "slider": {
+                            "min": 0.1,
+                            "max": 2,
+                            "step": 0.1
+                        },
                         "default": 0.5
-                    },
-                    "keywords": {
-                        "description": "触发词此情绪的关键词",
-                        "type": "list",
-                        "hint": "用户发送的文本 或者 AI回答的文本中包含这些关键词时，使用此情绪合成语音",
-                        "default": [
-                            "生气",
-                            "哼",
-                            "尼玛",
-                            "妈",
-                            "操",
-                            "艹",
-                            "逼",
-                            "爹",
-                            "玩意",
-                            "滚",
-                            "鸡巴",
-                            "老子",
-                            "屎",
-                            "死"
-                        ]
                     }
                 }
             },
@@ -374,36 +404,6 @@
                 "type": "object",
                 "hint": "",
                 "items": {
-                    "ref_audio_path": {
-                        "description": "参考音频文件路径",
-                        "type": "string",
-                        "hint": "支持绝对路径和相对路径，拼接时请使用“/”",
-                        "default": "data/plugins/astrbot_plugin_GPT_SoVITS/default_audio/就算是这样，也不至于直接碎掉啊，除非.wav"
-                    },
-                    "prompt_text": {
-                        "description": "参考音频文本",
-                        "type": "string",
-                        "hint": "即音频中讲的是什么",
-                        "default": "就算是这样，也不至于直接碎掉啊，除非"
-                    },
-                    "prompt_lang": {
-                        "description": "参考音频文本的语种",
-                        "type": "string",
-                        "hint": "默认为中文",
-                        "default": "zh"
-                    },
-                    "speed_factor": {
-                        "description": "语音播放速度",
-                        "type": "float",
-                        "hint": "1为原始语速",
-                        "default": 1
-                    },
-                    "fragment_interval": {
-                        "description": "语音片段之间的间隔时间",
-                        "type": "float",
-                        "hint": "间隔越短，语气越急促（单位：秒）",
-                        "default": 0.6
-                    },
                     "keywords": {
                         "description": "触发词此情绪的关键词",
                         "type": "list",
@@ -411,7 +411,47 @@
                         "default": [
                             "惊讶",
                             "啊"
-                        ]
+                        ],
+                        "ref_audio_path": {
+                            "description": "参考音频文件路径",
+                            "type": "string",
+                            "hint": "支持绝对路径和相对路径，拼接时请使用“/”",
+                            "default": "data/plugins/astrbot_plugin_GPT_SoVITS/default_audio/就算是这样，也不至于直接碎掉啊，除非.wav"
+                        },
+                        "prompt_text": {
+                            "description": "参考音频文本",
+                            "type": "string",
+                            "hint": "即音频中讲的是什么",
+                            "default": "就算是这样，也不至于直接碎掉啊，除非"
+                        },
+                        "prompt_lang": {
+                            "description": "参考音频文本的语种",
+                            "type": "string",
+                            "hint": "默认为中文",
+                            "default": "zh"
+                        },
+                        "speed_factor": {
+                            "description": "语音播放速度",
+                            "type": "float",
+                            "hint": "1为原始语速",
+                            "slider": {
+                                "min": 0.5,
+                                "max": 2,
+                                "step": 0.1
+                            },
+                            "default": 1
+                        },
+                        "fragment_interval": {
+                            "description": "语音片段之间的间隔时间",
+                            "type": "float",
+                            "hint": "间隔越短，语气越急促（单位：秒）",
+                            "slider": {
+                                "min": 0.1,
+                                "max": 2,
+                                "step": 0.1
+                            },
+                            "default": 0.6
+                        }
                     }
                 }
             }
