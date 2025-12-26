@@ -5,11 +5,11 @@
 
 # astrbot_plugin_GPT_SoVITS
 
-_✨ [astrbot](https://github.com/AstrBotDevs/AstrBot) GPT_SoVITS对接插件 ✨_  
+_✨ GPT_SoVITS对接插件 ✨_  
 
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
+[![License](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0.html)
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
-[![AstrBot](https://img.shields.io/badge/AstrBot-3.4%2B-orange.svg)](https://github.com/Soulter/AstrBot)
+[![AstrBot](https://img.shields.io/badge/AstrBot-4.0%2B-orange.svg)](https://github.com/Soulter/AstrBot)
 [![GitHub](https://img.shields.io/badge/作者-Zhalslar-blue)](https://github.com/Zhalslar)
 
 </div>
@@ -27,17 +27,7 @@ _✨ [astrbot](https://github.com/AstrBotDevs/AstrBot) GPT_SoVITS对接插件 �
 
 ### 第二步，安装本插件
 
-- 可以直接在astrbot的插件市场搜索astrbot_plugin_GPT_SoVITS，点击安装，耐心等待安装完成即可  
-
-- 或者可以直接克隆源码到插件文件夹：
-
-```bash
-# 克隆仓库到插件目录
-cd /AstrBot/data/plugins
-git clone https://github.com/Zhalslar/astrbot_plugin_GPT_SoVITS 
-
-# 控制台重启AstrBot
-```
+在astrbot的插件市场搜索astrbot_plugin_GPT_SoVITS，点击安装即可  
 
 ## ⚙️ 配置
 
