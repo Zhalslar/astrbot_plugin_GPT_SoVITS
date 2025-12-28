@@ -2,6 +2,6 @@ name: astrbot_plugin_GPT_SoVITS
 display_name: GPT_SoVITS
 desc: 对接本地部署的GPT_SoVITS,为astrbot提供文本转语音(TTS)服务，支持自定义音色和情绪
 help: 略
-version: v2.0.0
+version: v2.0.1
 author: Zhalslar
 repo: https://github.com/Zhalslar/astrbot_plugin_GPT_SoVITS
