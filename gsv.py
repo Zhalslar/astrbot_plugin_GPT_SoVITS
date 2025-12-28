@@ -1,6 +1,5 @@
-import re
+from dataclasses import dataclass
 from pathlib import Path
-from typing import NamedTuple
 
 from aiohttp import ClientError, ClientSession, ClientTimeout
 
@@ -8,16 +7,16 @@ from astrbot.api import logger
 from astrbot.core import AstrBotConfig
 
 
-class RequestResult(NamedTuple):
+@dataclass
+class GSVRequestResult:
     ok: bool
     data: bytes | None = None
     error: str | None = None
 
 
 class GPTSoVITSCore:
-    def __init__(self, config: AstrBotConfig, data_dir: Path):
+    def __init__(self, config: AstrBotConfig):
         self.conf = config
-        self.data_dir = data_dir
 
         self.base_url: str = config["base_url"]
 
@@ -25,14 +24,9 @@ class GPTSoVITSCore:
         self.sovits_weights_path = config["model"]["sovits_weights_path"]
 
         self.default_params: dict = config["default_params"]
-        self.default_emotion: str = config["default_emotion"]
         self.emotions: dict = config["emotions"]
 
         self.session: ClientSession | None = None
-
-    # =====================
-    # 生命周期
-    # =====================
 
     async def initialize(self):
         self.session = ClientSession(timeout=ClientTimeout(total=30))
@@ -49,33 +43,20 @@ class GPTSoVITSCore:
         if self.session:
             await self.session.close()
 
-    # =====================
-    # 基础工具
-    # =====================
-
-    def _generate_file_name(self, params: dict) -> str:
-        sanitized = re.sub(r"[^a-zA-Z0-9\u4e00-\u9fff\s]", "", params["text"])
-        name = sanitized.strip()[:30]
-        return f"{name}.{self.default_params['media_type']}"
-
-    def find_emotion(self, text: str) -> str | None:
+    def _find_emotion(self, text: str) -> str | None:
         for emotion, params in self.emotions.items():
             for word in params.get("keywords", []):
                 if word in text:
                     return emotion
         return None
 
-    # =====================
-    # 核心请求层（唯一入口）
-    # =====================
-
     async def _request(
         self,
         endpoint: str,
         params: dict | None = None,
-    ) -> RequestResult:
+    ) -> GSVRequestResult:
         if not self.session:
-            return RequestResult(False, error="HTTP session not initialized")
+            return GSVRequestResult(False, error="HTTP session not initialized")
 
         if params:
             params = {
@@ -86,21 +67,20 @@ class GPTSoVITSCore:
         try:
             async with self.session.get(endpoint, params=params) as resp:
                 if resp.status != 200:
-                    return RequestResult(ok=False, error=f"HTTP {resp.status}")
+                    detail = await resp.text()
+                    return GSVRequestResult(
+                        ok=False, error=f"HTTP {resp.status}: {detail}"
+                    )
 
-                return RequestResult(ok=True, data=await resp.read())
+                return GSVRequestResult(ok=True, data=await resp.read())
 
         except ClientError as e:
             logger.error(f"[HTTP] 请求失败: {endpoint} | {e}")
-            return RequestResult(False, error=str(e))
+            return GSVRequestResult(False, error=str(e))
 
         except Exception as e:
             logger.exception(f"[HTTP] 未知异常: {endpoint}")
-            return RequestResult(False, error=str(e))
-
-    # =====================
-    # 业务接口
-    # =====================
+            return GSVRequestResult(False, error=str(e))
 
     async def _set_gpt_weights(self, path: str):
         result = await self._request(
@@ -124,18 +104,31 @@ class GPTSoVITSCore:
         else:
             logger.error(f"SoVITS 模型加载失败: {result.error}")
 
-    async def inference(self, text: str, emotion: str | None = None) -> str | None:
+    async def inference(self, text: str, emotion: str | None = None) -> GSVRequestResult:
+        """
+        TTS 推理
+        :param text: 文本
+        :param emotion: 情绪
+        :return: 合成音频文件的路径
+        """
         params = self.default_params.copy()
 
+        if text:
+            params["text"] = text
+
         if emotion is None:
-            emotion = self.find_emotion(text)
+            emotion = self._find_emotion(text)
+            logger.debug(f"已匹配到情绪: {emotion}")
 
         if emotion:
             cfg = self.emotions.get(emotion, {}).copy()
             cfg.pop("keywords", None)
             params.update(cfg)
-        if text:
-            params["text"] = text
+
+        if "ref_audio_path" in params:
+            params["ref_audio_path"] = str(Path(params["ref_audio_path"]).resolve())
+
+        logger.debug(f"向 GSV 发起请求，参数: {params}")
 
         result = await self._request(
             f"{self.base_url}/tts",
@@ -143,15 +136,12 @@ class GPTSoVITSCore:
         )
 
         if not result.ok or not result.data:
-            logger.warning(f"TTS 失败: {result.error}")
-            return None
+            logger.error(f"TTS 失败: {result.error}")
 
-        save_path = self.data_dir / self._generate_file_name(params)
-        save_path.write_bytes(result.data)
-
-        return str(save_path)
+        return result
 
     async def restart(self):
+        """重启 GPT=-SoVITS"""
         result = await self._request(
             f"{self.base_url}/control",
             {"command": "restart"},

@@ -3,7 +3,7 @@
         "description": "总开关",
         "type": "bool",
         "hint": "GPT-SoVITS 插件总开关，请在部署好 GPT-SoVITS 后再打开此开关",
-        "default": false
+        "default": true
     },
     "auto": {
         "description": "主动调用配置",
@@ -20,12 +20,22 @@
                 "description": "主动转语音发送的概率",
                 "type": "float",
                 "hint": "",
+                "slider": {
+                    "min": 0,
+                    "max": 1,
+                    "step": 0.01
+                },
                 "default": 0.15
             },
             "max_llm_len": {
                 "description": "文本长度限制",
                 "type": "int",
                 "hint": "超过此长度的文本不会被转成语音发送",
+                "slider": {
+                    "min": 0,
+                    "max": 200,
+                    "step": 1
+                },
                 "default": 50
             }
         }
@@ -33,7 +43,7 @@
     "base_url": {
         "description": "GPT-SoVITS API 的 URL",
         "type": "string",
-        "hint": "必填！GPT_SoVITS官方整合包默认为http://127.0.0.1:9880，第三方整合包可能不同",
+        "hint": "必填！GPT_SoVITS官方整合包默认为 http://127.0.0.1:9880 ，第三方整合包可能不同",
         "default": "http://127.0.0.1:9880"
     },
     "model": {
@@ -58,60 +68,81 @@
     "default_params": {
         "description": "TTS默认参数",
         "type": "object",
-        "hint": "",
+        "hint": "这些参数将用于每次语音合成请求，可根据需要调整",
         "items": {
             "text": {
-                "description": "TTS文本",
+                "description": "要转换为语音的文本",
                 "type": "string",
-                "hint": "即要转换为语音的文本",
-                "default": "这是一段测试文本，阿巴阿巴"
+                "hint": "支持任意语言，但需与 text_lang 匹配",
+                "default": "你要干嘛？"
+            },
+            "text_lang": {
+                "description": "文本语言",
+                "type": "string",
+                "hint": "zh 中文，en 英语，ja 日语，ko 韩语",
+                "options": [
+                    "zh",
+                    "en",
+                    "ja",
+                    "ko"
+                ],
+                "default": "zh"
             },
             "ref_audio_path": {
-                "description": "参考音频文件路径",
-                "type": "string",
-                "hint": "支持绝对路径和相对路径，拼接时请使用“/”",
+                "description": "参考音频路径",
+                "type": "text",
+                "hint": "用于音色克隆，支持 wav 格式，必填！",
                 "default": "data/plugins/astrbot_plugin_GPT_SoVITS/default_audio/就算是这样，也不至于直接碎掉啊，除非.wav"
             },
             "prompt_text": {
-                "description": "参考音频文本",
+                "description": "参考音频对应的文本",
                 "type": "string",
-                "hint": "即参考音频中讲的是什么",
+                "hint": "用于对齐音色与内容，建议填写",
                 "default": "就算是这样，也不至于直接碎掉啊，除非"
             },
-            "text_lang": {
-                "description": "参考音频文本的语种",
+            "prompt_lang": {
+                "description": "参考音频文本语言",
                 "type": "string",
-                "hint": "默认为中文",
+                "hint": "尽量与 prompt_text 语言一致",
                 "default": "zh"
             },
-            "aux_ref_audio_paths": {
-                "description": "辅助参考音频文件路径列表",
-                "type": "string",
-                "hint": "不填也行",
-                "default": ""
-            },
             "top_k": {
-                "description": "生成语音的多样性",
+                "description": "Top-K 采样",
                 "type": "int",
-                "hint": "",
+                "hint": "控制生成语音的多样性，值越大越多样",
+                "slider": {
+                    "min": 1,
+                    "max": 20,
+                    "step": 1
+                },
                 "default": 5
             },
             "top_p": {
-                "description": "核采样的阈值",
+                "description": "Top-P 核采样",
                 "type": "float",
-                "hint": "",
+                "hint": "控制采样范围，1.0 表示不限制",
+                "slider": {
+                    "min": 0.1,
+                    "max": 1.0,
+                    "step": 0.01
+                },
                 "default": 1.0
             },
             "temperature": {
-                "description": "生成语音的随机性",
+                "description": "采样温度",
                 "type": "float",
-                "hint": "",
+                "hint": "控制随机性，1.0 为原始分布，越低越保守",
+                "slider": {
+                    "min": 0.1,
+                    "max": 2.0,
+                    "step": 0.01
+                },
                 "default": 1.0
             },
             "text_split_method": {
-                "description": "切分文本的方法",
+                "description": "文本切分方式",
                 "type": "string",
-                "hint": "可选值：  `cut0`：不切分    `cut1`：四句一切   `cut2`：50字一切    `cut3`：按中文句号切    `cut4`：按英文句号切    `cut5`：按标点符号切",
+                "hint": "影响长文本处理效果， `cut0`：不切分。    `cut1`：四句一切。  `cut2`：50字一切。    `cut3`：按中文句号切。    `cut4`：按英文句号切。    `cut5`：按标点符号切",
                 "options": [
                     "cut0",
                     "cut1",
@@ -123,11 +154,11 @@
                 "default": "cut3"
             },
             "batch_size": {
-                "description": "批处理大小",
+                "description": "推理批大小",
                 "type": "int",
-                "hint": "",
+                "hint": "越大越快但越占显存",
                 "slider": {
-                    "min": 0,
+                    "min": 1,
                     "max": 5,
                     "step": 1
                 },
@@ -136,75 +167,75 @@
             "batch_threshold": {
                 "description": "批处理阈值",
                 "type": "float",
-                "hint": "",
+                "hint": "控制是否拆分批次",
                 "slider": {
-                    "min": 0,
-                    "max": 1,
+                    "min": 0.1,
+                    "max": 1.0,
                     "step": 0.01
                 },
                 "default": 0.75
             },
             "split_bucket": {
-                "description": "将文本分割成桶以便并行处理",
+                "description": "启用分桶推理",
                 "type": "bool",
-                "hint": "",
+                "hint": "开启后可并行处理长文本，建议开启",
                 "default": true
             },
             "speed_factor": {
-                "description": "语音播放速度",
+                "description": "语速倍数",
                 "type": "float",
-                "hint": "1为原始语速",
+                "hint": "1.0 为原速",
                 "slider": {
                     "min": 0.5,
-                    "max": 2,
+                    "max": 2.0,
                     "step": 0.1
                 },
-                "default": 1
+                "default": 1.0
             },
             "fragment_interval": {
-                "description": "语音片段之间的间隔时间",
+                "description": "语音片段间隔",
                 "type": "float",
-                "hint": "",
+                "hint": "单位：秒，影响停顿感",
                 "slider": {
                     "min": 0.1,
-                    "max": 1,
+                    "max": 1.0,
                     "step": 0.01
                 },
                 "default": 0.3
             },
             "streaming_mode": {
-                "description": "启用流模式",
+                "description": "启用流式返回",
                 "type": "bool",
-                "hint": "",
+                "hint": "开启后逐步返回音频流，适合长文本",
                 "default": false
             },
             "seed": {
                 "description": "随机种子",
                 "type": "int",
-                "hint": "用于结果的可重复性",
+                "hint": "-1 为随机，设定后可复现结果",
                 "default": -1
             },
             "parallel_infer": {
-                "description": "并行执行推理",
+                "description": "启用并行推理",
                 "type": "bool",
-                "hint": "",
+                "hint": "开启后可提升速度，建议开启",
                 "default": true
             },
             "repetition_penalty": {
-                "description": "重复惩罚因子",
+                "description": "重复惩罚系数",
                 "type": "float",
-                "hint": "",
+                "hint": "越高越不容易重复",
                 "slider": {
-                    "min": 0,
-                    "max": 3,
+                    "min": 1.0,
+                    "max": 3.0,
                     "step": 0.01
                 },
                 "default": 1.35
             },
             "media_type": {
-                "description": "输出媒体的类型",
+                "description": "输出音频格式",
                 "type": "string",
-                "hint": "建议用wav",
+                "hint": "建议 wav，兼容性好",
                 "options": [
                     "wav",
                     "mp3",
@@ -217,44 +248,64 @@
     "emotions": {
         "description": "情绪配置",
         "type": "object",
-        "hint": "根据关键词命中某情绪时，会用该情绪的参数覆盖默认参数，从而改变生成语音的语气",
+        "hint": "情绪配置： AI回答 或 用户消息 包含某关键词 → 触发某组参数。未命中则使用默认参数",
         "items": {
-            "gently": {
-                "description": "【温柔地说】参数配置",
+            "one": {
+                "description": "【情绪1】参数配置",
                 "type": "object",
-                "hint": "",
                 "items": {
                     "keywords": {
-                        "description": "触发词此情绪的关键词",
+                        "description": "触发词列表",
                         "type": "list",
-                        "hint": "用户发送的文本 或者 AI回答的文本中包含这些关键词时，使用此情绪合成语音",
+                        "hint": "命中即走本组参数",
                         "default": [
                             "温柔",
-                            "深情"
+                            "深情",
+                            "宝贝",
+                            "亲爱的",
+                            "别怕",
+                            "我在呢",
+                            "抱抱",
+                            "安慰",
+                            "轻声",
+                            "细腻",
+                            "暖心",
+                            "软萌",
+                            "撒娇",
+                            "月光",
+                            "微风",
+                            "轻轻",
+                            "悄悄"
                         ]
                     },
                     "ref_audio_path": {
                         "description": "参考音频文件路径",
-                        "type": "string",
+                        "type": "text",
                         "hint": "支持绝对路径和相对路径，拼接时请使用“/”",
                         "default": "data/plugins/astrbot_plugin_GPT_SoVITS/default_audio/不要害怕，也不要哭了.wav"
                     },
                     "prompt_text": {
-                        "description": "参考音频文本",
+                        "description": "参考音频对应的文本",
                         "type": "string",
-                        "hint": "即音频中讲的是什么",
+                        "hint": "建议填写，用于对齐音色与内容",
                         "default": "不要害怕，也不要哭了"
                     },
                     "prompt_lang": {
-                        "description": "参考音频文本的语种",
+                        "description": "参考音频文本语言",
                         "type": "string",
-                        "hint": "默认为中文",
+                        "hint": "zh 中文，en 英语，ja 日语，ko 韩语",
+                        "options": [
+                            "zh",
+                            "en",
+                            "ja",
+                            "ko"
+                        ],
                         "default": "zh"
                     },
                     "speed_factor": {
-                        "description": "语音播放速度",
+                        "description": "语速倍数",
                         "type": "float",
-                        "hint": "1为原始语速",
+                        "hint": "1.0 为原速",
                         "slider": {
                             "min": 0.5,
                             "max": 2,
@@ -263,9 +314,9 @@
                         "default": 1
                     },
                     "fragment_interval": {
-                        "description": "语音片段之间的间隔时间",
+                        "description": "语音片段间隔（秒）",
                         "type": "float",
-                        "hint": "间隔越短，语气越急促（单位：秒）",
+                        "hint": "间隔越短语气越急促",
                         "slider": {
                             "min": 0.1,
                             "max": 2,
@@ -275,42 +326,65 @@
                     }
                 }
             },
-            "happily": {
-                "description": "【开心地说】参数配置",
+            "two": {
+                "description": "【情绪2】参数配置",
                 "type": "object",
-                "hint": "",
                 "items": {
                     "keywords": {
-                        "description": "触发词此情绪的关键词",
+                        "description": "触发词列表",
                         "type": "list",
-                        "hint": "用户发送的文本 或者 AI回答的文本中包含这些关键词时，使用此情绪合成语音",
+                        "hint": "命中即走本组参数",
                         "default": [
                             "开心",
-                            "高兴"
+                            "高兴",
+                            "哈哈",
+                            "嘻嘻",
+                            "耶",
+                            "太棒了",
+                            "哇塞",
+                            "爽",
+                            "欧皇",
+                            "锦鲤",
+                            "庆祝",
+                            "红包",
+                            "胜利",
+                            "完美",
+                            "nice",
+                            "good",
+                            "耶嘿",
+                            "冲鸭",
+                            "加油",
+                            "奥利给"
                         ]
                     },
                     "ref_audio_path": {
                         "description": "参考音频文件路径",
-                        "type": "string",
+                        "type": "text",
                         "hint": "支持绝对路径和相对路径，拼接时请使用“/”",
                         "default": "data/plugins/astrbot_plugin_GPT_SoVITS/default_audio/它好像在等另一只蕈兽_心情很好的样子.wav"
                     },
                     "prompt_text": {
-                        "description": "参考音频文本",
+                        "description": "参考音频对应的文本",
                         "type": "string",
-                        "hint": "影响语音合成的情绪",
+                        "hint": "建议填写，用于对齐音色与内容",
                         "default": "它好像在等另一只蕈兽_心情很好的样子"
                     },
                     "prompt_lang": {
-                        "description": "参考音频文本的语种",
+                        "description": "参考音频文本语言",
                         "type": "string",
-                        "hint": "默认为中文",
+                        "hint": "zh 中文，en 英语，ja 日语，ko 韩语",
+                        "options": [
+                            "zh",
+                            "en",
+                            "ja",
+                            "ko"
+                        ],
                         "default": "zh"
                     },
                     "speed_factor": {
-                        "description": "语音播放速度",
+                        "description": "语速倍数",
                         "type": "float",
-                        "hint": "1为原始语速",
+                        "hint": "1.0 为原速",
                         "slider": {
                             "min": 0.5,
                             "max": 2,
@@ -319,9 +393,9 @@
                         "default": 1.1
                     },
                     "fragment_interval": {
-                        "description": "语音片段之间的间隔时间",
+                        "description": "语音片段间隔（秒）",
                         "type": "float",
-                        "hint": "间隔越短，语气越急促（单位：秒）",
+                        "hint": "间隔越短语气越急促",
                         "slider": {
                             "min": 0.1,
                             "max": 2,
@@ -331,15 +405,14 @@
                     }
                 }
             },
-            "angrily": {
-                "description": "【生气地说】参数配置",
+            "three": {
+                "description": "【情绪3】参数配置",
                 "type": "object",
-                "hint": "",
                 "items": {
                     "keywords": {
-                        "description": "触发词此情绪的关键词",
+                        "description": "触发词列表",
                         "type": "list",
-                        "hint": "用户发送的文本 或者 AI回答的文本中包含这些关键词时，使用此情绪合成语音",
+                        "hint": "命中即走本组参数",
                         "default": [
                             "生气",
                             "哼",
@@ -354,31 +427,53 @@
                             "鸡巴",
                             "老子",
                             "屎",
-                            "死"
+                            "死",
+                            "靠",
+                            "烦",
+                            "抓狂",
+                            "怒",
+                            "火大",
+                            "气死",
+                            "坑爹",
+                            "辣鸡",
+                            "垃圾",
+                            "废物",
+                            "无语",
+                            "暴躁",
+                            "忍不了",
+                            "破防",
+                            "杠精",
+                            "找茬"
                         ]
                     },
                     "ref_audio_path": {
                         "description": "参考音频文件路径",
-                        "type": "string",
+                        "type": "text",
                         "hint": "支持绝对路径和相对路径，拼接时请使用“/”",
                         "default": "data/plugins/astrbot_plugin_GPT_SoVITS/default_audio/你还会选择现在的位置吗？到那时，你觉得自己又会是什么呢.wav"
                     },
                     "prompt_text": {
-                        "description": "参考音频文本",
+                        "description": "参考音频对应的文本",
                         "type": "string",
-                        "hint": "即音频中讲的是什么",
+                        "hint": "建议填写，用于对齐音色与内容",
                         "default": "你还会选择现在的位置吗？到那时，你觉得自己又会是什么呢"
                     },
                     "prompt_lang": {
-                        "description": "参考音频文本的语种",
+                        "description": "参考音频文本语言",
                         "type": "string",
-                        "hint": "默认为中文",
+                        "hint": "zh 中文，en 英语，ja 日语，ko 韩语",
+                        "options": [
+                            "zh",
+                            "en",
+                            "ja",
+                            "ko"
+                        ],
                         "default": "zh"
                     },
                     "speed_factor": {
-                        "description": "语音播放速度",
+                        "description": "语速倍数",
                         "type": "float",
-                        "hint": "1为原始语速",
+                        "hint": "1.0 为原速",
                         "slider": {
                             "min": 0.5,
                             "max": 2,
@@ -387,71 +482,15 @@
                         "default": 1.2
                     },
                     "fragment_interval": {
-                        "description": "语音片段之间的间隔时间",
+                        "description": "语音片段间隔（秒）",
                         "type": "float",
-                        "hint": "间隔越短，语气越急促（单位：秒）",
+                        "hint": "间隔越短语气越急促",
                         "slider": {
                             "min": 0.1,
                             "max": 2,
                             "step": 0.1
                         },
                         "default": 0.5
-                    }
-                }
-            },
-            "surprise": {
-                "description": "【惊讶地说】参数配置",
-                "type": "object",
-                "hint": "",
-                "items": {
-                    "keywords": {
-                        "description": "触发词此情绪的关键词",
-                        "type": "list",
-                        "hint": "用户发送的文本 或者 AI回答的文本中包含这些关键词时，使用此情绪合成语音",
-                        "default": [
-                            "惊讶",
-                            "啊"
-                        ],
-                        "ref_audio_path": {
-                            "description": "参考音频文件路径",
-                            "type": "string",
-                            "hint": "支持绝对路径和相对路径，拼接时请使用“/”",
-                            "default": "data/plugins/astrbot_plugin_GPT_SoVITS/default_audio/就算是这样，也不至于直接碎掉啊，除非.wav"
-                        },
-                        "prompt_text": {
-                            "description": "参考音频文本",
-                            "type": "string",
-                            "hint": "即音频中讲的是什么",
-                            "default": "就算是这样，也不至于直接碎掉啊，除非"
-                        },
-                        "prompt_lang": {
-                            "description": "参考音频文本的语种",
-                            "type": "string",
-                            "hint": "默认为中文",
-                            "default": "zh"
-                        },
-                        "speed_factor": {
-                            "description": "语音播放速度",
-                            "type": "float",
-                            "hint": "1为原始语速",
-                            "slider": {
-                                "min": 0.5,
-                                "max": 2,
-                                "step": 0.1
-                            },
-                            "default": 1
-                        },
-                        "fragment_interval": {
-                            "description": "语音片段之间的间隔时间",
-                            "type": "float",
-                            "hint": "间隔越短，语气越急促（单位：秒）",
-                            "slider": {
-                                "min": 0.1,
-                                "max": 2,
-                                "step": 0.1
-                            },
-                            "default": 0.6
-                        }
                     }
                 }
             }

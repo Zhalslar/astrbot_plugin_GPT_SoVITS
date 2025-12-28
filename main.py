@@ -1,3 +1,4 @@
+import base64
 import random
 
 from astrbot.api import logger
@@ -6,7 +7,6 @@ from astrbot.api.star import Context, Star
 from astrbot.core import AstrBotConfig
 from astrbot.core.message.components import Plain, Record
 from astrbot.core.platform import AstrMessageEvent
-from astrbot.core.star.star_tools import StarTools
 
 from .gsv import GPTSoVITSCore
 
@@ -15,12 +15,10 @@ class GPTSoVITSPlugin(Star):
     def __init__(self, context: Context, config: AstrBotConfig):
         super().__init__(context)
         self.conf = config
-        self.data_dir = StarTools.get_data_dir("astrbot_plugin_GPT_SoVITS")
 
-        self.only_llm_result: bool = self.conf["auto"]["only_llm_result"]
-        self.tts_prob: float = self.conf["auto"]["tts_prob"]
-        self.max_llm_len: int = self.conf["auto"]["max_llm_len"]
-
+        self.only_llm_result: bool = config["auto"]["only_llm_result"]
+        self.tts_prob: float = config["auto"]["tts_prob"]
+        self.max_llm_len: int = config["auto"]["max_llm_len"]
 
         self.enabled = config["enabled"]
         self.gsv: GPTSoVITSCore | None = None
@@ -29,10 +27,12 @@ class GPTSoVITSPlugin(Star):
         if not self.enabled:
             return
         try:
-            self.gsv = GPTSoVITSCore(self.conf, self.data_dir)
+            self.gsv = GPTSoVITSCore(self.conf)
             await self.gsv.initialize()
         except Exception as e:
-            logger.error(f"GPT-SoVITS 核心初始化失败，插件已自动关闭业务功能, 报错：{e}")
+            logger.error(
+                f"GPT-SoVITS 核心初始化失败，插件已自动关闭业务功能, 报错：{e}"
+            )
             self.enabled = False
             self.conf.save_config()
 
@@ -68,34 +68,25 @@ class GPTSoVITSPlugin(Star):
         if not self.gsv:
             return
 
-        audio_path = await self.gsv.inference(seg.text)
-        if audio_path is None:
-            logger.error("TTS任务执行失败！")
-            return
+        result = await self.gsv.inference(seg.text)
+        if result.ok and result.data:
+            chain.clear()
+            b64_str = base64.urlsafe_b64encode(result.data).decode()
+            chain.append(Record.fromBase64(b64_str))
 
-        chain.clear()
-        chain.append(Record.fromFileSystem(audio_path))
-
-    @filter.command(
-        "说",
-        alias={
-            "温柔地说",
-            "开心地说",
-            "生气地说",
-            "惊讶地说",
-        },
-    )
+    @filter.command("说", alias={"gsv", "GSV"})
     async def on_command(self, event: AstrMessageEvent):
-        """xx地说 xxx，直接调用TTS，发送合成后的语音"""
+        """说 <内容>, 直接调用GSV合成语音"""
         if not self.gsv:
             return
-        cmd, _, text = event.message_str.partition(" ")
-        emotion = self.gsv.find_emotion(cmd)
-        audio_path = await self.gsv.inference(text, emotion)
-        if audio_path is None:
-            yield event.plain_result("TTS任务执行失败")
-            return
-        yield event.chain_result([Record.fromFileSystem(audio_path)])
+        text = event.message_str.partition(" ")[2]
+        result = await self.gsv.inference(text)
+        seg = (
+            Record.fromBase64(base64.urlsafe_b64encode(result.data).decode())
+            if result.ok and result.data
+            else Plain(str(result.error))
+        )
+        yield event.chain_result([seg])
 
     @filter.command("重启GSV", alias={"重启gsv"})
     async def tts_control(self, event: AstrMessageEvent):
