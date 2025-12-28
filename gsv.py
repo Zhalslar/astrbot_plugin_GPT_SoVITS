@@ -13,13 +13,11 @@ class GSVRequestResult:
     ok: bool
     data: bytes | None = None
     error: str | None = None
-    path: str | None = None
 
 
 class GPTSoVITSCore:
-    def __init__(self, config: AstrBotConfig, data_dir: Path):
+    def __init__(self, config: AstrBotConfig):
         self.conf = config
-        self.data_dir = data_dir
 
         self.base_url: str = config["base_url"]
 
@@ -145,11 +143,6 @@ class GPTSoVITSCore:
 
         if not result.ok or not result.data:
             logger.error(f"TTS 失败: {result.error}")
-            return result
-
-        save_path = self.data_dir / self._generate_file_name(params)
-        save_path.write_bytes(result.data)
-        result.path = str(save_path)
 
         return result
 

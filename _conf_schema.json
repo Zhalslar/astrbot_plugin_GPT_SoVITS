@@ -74,7 +74,7 @@
                 "description": "要转换为语音的文本",
                 "type": "string",
                 "hint": "支持任意语言，但需与 text_lang 匹配",
-                "default": "这是一段测试文本，阿巴阿巴"
+                "default": "你要干嘛？"
             },
             "text_lang": {
                 "description": "文本语言",

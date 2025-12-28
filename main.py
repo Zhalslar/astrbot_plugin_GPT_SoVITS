@@ -1,3 +1,4 @@
+import base64
 import random
 
 from astrbot.api import logger
@@ -6,7 +7,6 @@ from astrbot.api.star import Context, Star
 from astrbot.core import AstrBotConfig
 from astrbot.core.message.components import Plain, Record
 from astrbot.core.platform import AstrMessageEvent
-from astrbot.core.star.star_tools import StarTools
 
 from .gsv import GPTSoVITSCore
 
@@ -15,11 +15,10 @@ class GPTSoVITSPlugin(Star):
     def __init__(self, context: Context, config: AstrBotConfig):
         super().__init__(context)
         self.conf = config
-        self.data_dir = StarTools.get_data_dir("astrbot_plugin_GPT_SoVITS")
 
-        self.only_llm_result: bool = self.conf["auto"]["only_llm_result"]
-        self.tts_prob: float = self.conf["auto"]["tts_prob"]
-        self.max_llm_len: int = self.conf["auto"]["max_llm_len"]
+        self.only_llm_result: bool = config["auto"]["only_llm_result"]
+        self.tts_prob: float = config["auto"]["tts_prob"]
+        self.max_llm_len: int = config["auto"]["max_llm_len"]
 
         self.enabled = config["enabled"]
         self.gsv: GPTSoVITSCore | None = None
@@ -28,7 +27,7 @@ class GPTSoVITSPlugin(Star):
         if not self.enabled:
             return
         try:
-            self.gsv = GPTSoVITSCore(self.conf, self.data_dir)
+            self.gsv = GPTSoVITSCore(self.conf)
             await self.gsv.initialize()
         except Exception as e:
             logger.error(
@@ -70,9 +69,10 @@ class GPTSoVITSPlugin(Star):
             return
 
         result = await self.gsv.inference(seg.text)
-        if result.path:
+        if result.ok and result.data:
             chain.clear()
-            chain.append(Record.fromFileSystem(result.path))
+            b64_str = base64.urlsafe_b64encode(result.data).decode()
+            chain.append(Record.fromBase64(b64_str))
 
     @filter.command("说", alias={"gsv", "GSV"})
     async def on_command(self, event: AstrMessageEvent):
@@ -82,8 +82,8 @@ class GPTSoVITSPlugin(Star):
         text = event.message_str.partition(" ")[2]
         result = await self.gsv.inference(text)
         seg = (
-            Record.fromFileSystem(result.path)
-            if result.path
+            Record.fromBase64(base64.urlsafe_b64encode(result.data).decode())
+            if result.ok and result.data
             else Plain(str(result.error))
         )
         yield event.chain_result([seg])
