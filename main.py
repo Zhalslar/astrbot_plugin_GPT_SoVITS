@@ -65,7 +65,11 @@ class GPTSoVITSPlugin(Star):
             return
 
         # 合并所有Plain文本
-        combined_text = "".join(plain_texts)
+        combined_text = "\n".join(plain_texts)
+
+        # 仅允许一定长度以下的文本通过
+        if len(combined_text) > self.max_llm_len:
+            return
 
         if not self.gsv:
             return
