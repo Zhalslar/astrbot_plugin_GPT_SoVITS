@@ -49,26 +49,28 @@ class GPTSoVITSPlugin(Star):
         chain = result.chain
         if not chain:
             return
-
         if self.only_llm_result and not result.is_llm_result():
             return
-
         if random.random() > self.tts_prob:
             return
 
-        # 仅允许只含有单条文本的消息链通过
-        seg = chain[0]
-        if not (len(chain) == 1 and isinstance(seg, Plain)):
+        # 收集所有Plain文本片段
+        plain_texts = []
+        for seg in chain:
+            if isinstance(seg, Plain):
+                plain_texts.append(seg.text)
+
+        # 仅允许只含有Plain的消息链通过
+        if len(plain_texts) != len(chain):
             return
 
-        # 仅允许一定长度以下的文本通过
-        if len(seg.text) > self.max_llm_len:
-            return
+        # 合并所有Plain文本
+        combined_text = "".join(plain_texts)
 
         if not self.gsv:
             return
 
-        result = await self.gsv.inference(seg.text)
+        result = await self.gsv.inference(combined_text)
         if result.ok and result.data:
             chain.clear()
             b64_str = base64.urlsafe_b64encode(result.data).decode()
