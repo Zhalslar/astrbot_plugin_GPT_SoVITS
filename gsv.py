@@ -1,4 +1,3 @@
-import re
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -44,12 +43,7 @@ class GPTSoVITSCore:
         if self.session:
             await self.session.close()
 
-    def _generate_file_name(self, params: dict) -> str:
-        sanitized = re.sub(r"[^a-zA-Z0-9\u4e00-\u9fff\s]", "", params["text"])
-        name = sanitized.strip()[:30]
-        return f"{name}.{self.default_params['media_type']}"
-
-    def find_emotion(self, text: str) -> str | None:
+    def _find_emotion(self, text: str) -> str | None:
         for emotion, params in self.emotions.items():
             for word in params.get("keywords", []):
                 if word in text:
@@ -123,7 +117,7 @@ class GPTSoVITSCore:
             params["text"] = text
 
         if emotion is None:
-            emotion = self.find_emotion(text)
+            emotion = self._find_emotion(text)
             logger.debug(f"已匹配到情绪: {emotion}")
 
         if emotion:
