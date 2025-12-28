@@ -21,7 +21,6 @@ class GPTSoVITSPlugin(Star):
         self.tts_prob: float = self.conf["auto"]["tts_prob"]
         self.max_llm_len: int = self.conf["auto"]["max_llm_len"]
 
-
         self.enabled = config["enabled"]
         self.gsv: GPTSoVITSCore | None = None
 
@@ -32,7 +31,9 @@ class GPTSoVITSPlugin(Star):
             self.gsv = GPTSoVITSCore(self.conf, self.data_dir)
             await self.gsv.initialize()
         except Exception as e:
-            logger.error(f"GPT-SoVITS 核心初始化失败，插件已自动关闭业务功能, 报错：{e}")
+            logger.error(
+                f"GPT-SoVITS 核心初始化失败，插件已自动关闭业务功能, 报错：{e}"
+            )
             self.enabled = False
             self.conf.save_config()
 
@@ -68,34 +69,24 @@ class GPTSoVITSPlugin(Star):
         if not self.gsv:
             return
 
-        audio_path = await self.gsv.inference(seg.text)
-        if audio_path is None:
-            logger.error("TTS任务执行失败！")
-            return
+        result = await self.gsv.inference(seg.text)
+        if result.path:
+            chain.clear()
+            chain.append(Record.fromFileSystem(result.path))
 
-        chain.clear()
-        chain.append(Record.fromFileSystem(audio_path))
-
-    @filter.command(
-        "说",
-        alias={
-            "温柔地说",
-            "开心地说",
-            "生气地说",
-            "惊讶地说",
-        },
-    )
+    @filter.command("说", alias={"gsv", "GSV"})
     async def on_command(self, event: AstrMessageEvent):
-        """xx地说 xxx，直接调用TTS，发送合成后的语音"""
+        """说 <内容>, 直接调用GSV合成语音"""
         if not self.gsv:
             return
-        cmd, _, text = event.message_str.partition(" ")
-        emotion = self.gsv.find_emotion(cmd)
-        audio_path = await self.gsv.inference(text, emotion)
-        if audio_path is None:
-            yield event.plain_result("TTS任务执行失败")
-            return
-        yield event.chain_result([Record.fromFileSystem(audio_path)])
+        text = event.message_str.partition(" ")[2]
+        result = await self.gsv.inference(text)
+        seg = (
+            Record.fromFileSystem(result.path)
+            if result.path
+            else Plain(str(result.error))
+        )
+        yield event.chain_result([seg])
 
     @filter.command("重启GSV", alias={"重启gsv"})
     async def tts_control(self, event: AstrMessageEvent):
