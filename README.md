@@ -32,13 +32,12 @@ _✨ GPT_SoVITS对接插件 ✨_
 ## ⚙️ 配置
 
 请在astrbot面板配置，插件管理 -> astrbot_plugin_memelite -> 操作 -> 插件配置
-![tmpDD79](https://github.com/user-attachments/assets/4155ee85-c308-4775-89a8-615fd3d0c5d0)
 
 - GPT-SoVITS API 的 URL(base_url)：必填！GPT_SoVITS官方整合包默认为<http://127.0.0.1:9880，> 第三方整合包可能不同
+
 - GPT模型文件路径(gpt_weights_path)：即“.ckpt”后缀的文件，请使用绝对路径！路径两端不要带双引号！！不填则默认用GPT_SoVITS内置的GPT模型
+
 - SoVITS模型文件路径(sovits_weights_path)：即“.pth”后缀的文件，请使用绝对路径，路径两端不要带双引号！！不填则默认用GPT_SoVITS内置的SoVITS模型
-- 默认使用的情绪(default_emotion)：内置情绪有：温柔地说、开心地说、惊讶地说、生气地说，每种情绪都可以自定义，如下图
-![图片](https://github.com/user-attachments/assets/475aecd6-1b20-47da-9f3a-6b18fda35f3d)
 
 ## 🐔 使用说明
 
@@ -60,28 +59,12 @@ pause
 python api_v2.py
 也可能是
 python3 api_v2.py
-
 ```
 
 ### 第二步，调用
 
 - 自动调用：调用LLM得到的文本有概率会自动转成语音发送，概率可在配置里调
-- 指令调用：
-
-```bash
- /{emotion} {text}` # 生成语音，emotion为情绪，text为文本
-/说 怎么啦？ # 示例1，使用默认情绪，注意用空格隔空参数
-/生气地说 我再也不理你了 # 示例2，使用指定情绪，注意用空格隔空参数
-```
-
-## 🤝 TODO
-
-- [x] 对接GPT_SoVITS,实现基本TTS的功能
-- [x] bot发送消息前，一定概率自动触发TTS
-- [x] 支持多情绪，并自动切换
-- [ ] 支持多模型
-- [ ] 支持多语言自动处理
-- [ ] 改成astrbot服务商，内嵌在astrbot框架中
+- 指令调用：例如“说 宝宝怎么啦” ，情绪已改成根据关键词自动识别，无需指定
 
 ## 👥 贡献指南
 
