@@ -87,10 +87,10 @@ class GPTSoVITSPlugin(Star):
             return
 
         params = await self._get_emotion_params(combined_text, event)
-        result = await self.service.inference(combined_text, extra_params=params)
-        if result.ok:
+        res = await self.service.inference(combined_text, extra_params=params)
+        if res:
             chain.clear()
-            chain.append(Record.fromBase64(result.to_bs64()))
+            chain.append(Record.fromBase64(res.to_bs64()))
 
     @filter.command("说", alias={"gsv", "GSV"})
     async def on_command(self, event: AstrMessageEvent):
@@ -98,8 +98,8 @@ class GPTSoVITSPlugin(Star):
         if not self.cfg.enabled:
             return
         text = event.message_str.partition(" ")[2]
-        result = await self.service.inference(text)
-        seg = Record.fromBase64(result.to_bs64()) if result.ok else Plain(result.error)
+        res = await self.service.inference(text)
+        seg = Record.fromBase64(res.to_bs64()) if res else Plain(res.error)
         yield event.chain_result([seg])
 
     @filter.command("重启GSV", alias={"重启gsv"})
@@ -116,15 +116,14 @@ class GPTSoVITSPlugin(Star):
         用语音输出要讲的话
         Args:
             message(string): 要讲的话
-            get_image(boolean): 是否获取当前对话中的图片附加到说说里, 默认为True
         """
         try:
             params = await self._get_emotion_params(message, event)
-            result = await self.service.inference(message, extra_params=params)
-            if result.ok:
-                seg = Record.fromBase64(result.to_bs64())
+            res = await self.service.inference(message, extra_params=params)
+            if res:
+                seg = Record.fromBase64(res.to_bs64())
                 await event.send(event.chain_result([seg]))
             else:
-                return result.error
+                return res.error
         except Exception as e:
             return str(e)
