@@ -1,57 +1,49 @@
 import base64
 import random
 
-from astrbot.api import logger
 from astrbot.api.event import filter
 from astrbot.api.star import Context, Star
 from astrbot.core import AstrBotConfig
 from astrbot.core.message.components import Plain, Record
 from astrbot.core.platform import AstrMessageEvent
 
-from .gsv import GPTSoVITSCore
-
+from .core.client import GSVApiClient
+from .core.service import GPTSoVITSService
+from .core.config import PluginConfig
+from .core.entry import EntryManager
 
 class GPTSoVITSPlugin(Star):
     def __init__(self, context: Context, config: AstrBotConfig):
         super().__init__(context)
-        self.conf = config
+        self.cfg = PluginConfig(config, context)
+        self.entry_mgr = EntryManager(self.cfg)
+        self.client = GSVApiClient(self.cfg)
+        self.service = GPTSoVITSService(self.cfg, self.client, self.entry_mgr)
 
-        self.only_llm_result: bool = config["auto"]["only_llm_result"]
-        self.tts_prob: float = config["auto"]["tts_prob"]
-        self.max_llm_len: int = config["auto"]["max_llm_len"]
-
-        self.enabled = config["enabled"]
-        self.gsv: GPTSoVITSCore | None = None
 
     async def initialize(self):
-        if not self.enabled:
-            return
-        try:
-            self.gsv = GPTSoVITSCore(self.conf)
-            await self.gsv.initialize()
-        except Exception as e:
-            logger.error(
-                f"GPT-SoVITS 核心初始化失败，插件已自动关闭业务功能, 报错：{e}"
-            )
-            self.enabled = False
-            self.conf.save_config()
+        if self.cfg.enabled:
+            await self.service.load_model()
 
     async def terminate(self):
-        if self.gsv:
-            await self.gsv.terminate()
+        await self.client.close()
 
     @filter.on_decorating_result()
     async def on_decorating_result(self, event: AstrMessageEvent):
         """消息入口"""
+        if not self.cfg.enabled:
+            return
+        cfg = self.cfg.auto
+
         result = event.get_result()
         if not result:
             return
         chain = result.chain
         if not chain:
             return
-        if self.only_llm_result and not result.is_llm_result():
+        if cfg.only_llm_result and not result.is_llm_result():
             return
-        if random.random() > self.tts_prob:
+        if random.random() > cfg.tts_prob:
             return
 
         # 收集所有Plain文本片段
@@ -68,13 +60,10 @@ class GPTSoVITSPlugin(Star):
         combined_text = "\n".join(plain_texts)
 
         # 仅允许一定长度以下的文本通过
-        if len(combined_text) > self.max_llm_len:
+        if len(combined_text) > cfg.max_msg_len:
             return
 
-        if not self.gsv:
-            return
-
-        result = await self.gsv.inference(combined_text)
+        result = await self.service.inference(combined_text)
         if result.ok and result.data:
             chain.clear()
             b64_str = base64.urlsafe_b64encode(result.data).decode()
@@ -83,10 +72,10 @@ class GPTSoVITSPlugin(Star):
     @filter.command("说", alias={"gsv", "GSV"})
     async def on_command(self, event: AstrMessageEvent):
         """说 <内容>, 直接调用GSV合成语音"""
-        if not self.gsv:
+        if not self.cfg.enabled:
             return
         text = event.message_str.partition(" ")[2]
-        result = await self.gsv.inference(text)
+        result = await self.service.inference(text)
         seg = (
             Record.fromBase64(base64.urlsafe_b64encode(result.data).decode())
             if result.ok and result.data
@@ -97,7 +86,7 @@ class GPTSoVITSPlugin(Star):
     @filter.command("重启GSV", alias={"重启gsv"})
     async def tts_control(self, event: AstrMessageEvent):
         """重启GPT_SoVITS"""
-        if not self.gsv:
+        if not self.cfg.enabled:
             return
         yield event.plain_result("重启TTS中...(报错信息请忽略，等待一会即可完成重启)")
-        await self.gsv.restart()
+        await self.service.restart()
