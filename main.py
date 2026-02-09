@@ -11,6 +11,7 @@ from .core.client import GSVApiClient
 from .core.service import GPTSoVITSService
 from .core.config import PluginConfig
 from .core.entry import EntryManager
+from .core.emotion import EmotionJudger
 
 class GPTSoVITSPlugin(Star):
     def __init__(self, context: Context, config: AstrBotConfig):
@@ -18,7 +19,8 @@ class GPTSoVITSPlugin(Star):
         self.cfg = PluginConfig(config, context)
         self.entry_mgr = EntryManager(self.cfg)
         self.client = GSVApiClient(self.cfg)
-        self.service = GPTSoVITSService(self.cfg, self.client, self.entry_mgr)
+        self.judger = EmotionJudger(self.cfg)
+        self.service = GPTSoVITSService(self.cfg, self.client, self.entry_mgr, self.judger)
 
 
     async def initialize(self):
@@ -28,7 +30,7 @@ class GPTSoVITSPlugin(Star):
     async def terminate(self):
         await self.client.close()
 
-    @filter.on_decorating_result()
+    @filter.on_decorating_result(priority=14)
     async def on_decorating_result(self, event: AstrMessageEvent):
         """消息入口"""
         if not self.cfg.enabled:

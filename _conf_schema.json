@@ -289,6 +289,26 @@
             }
         }
     },
+    "judge": {
+        "description": "LLM 配置",
+        "hint": "",
+        "type": "object",
+        "items": {
+            "enabled_llm": {
+                "description": "使用 LLM 判断情感",
+                "type": "bool",
+                "hint": "开启后，将使用 LLM 模型判断当前文本的情绪，从而改变语音的情绪参数。若关闭， 则使用情绪条目的触发词来匹配情绪",
+                "default": false
+            },
+            "provider_id": {
+                "description": "判断情感用的LLM提供商",
+                "type": "string",
+                "default": "",
+                "hint": "留空或者填写的提供商不存在时, 则使用当前正在使用的LLM提供商。 tip:工作较为简单，建议用稳定便宜又快速的小模型",
+                "_special": "select_provider"
+            }
+        }
+    },
     "entry_storage": {
         "description": "情绪参数配置",
         "hint": "可自定义多套情绪参数，并定义对应触发词。由此实现不同情绪的语音",

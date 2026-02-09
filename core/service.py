@@ -1,19 +1,26 @@
 from astrbot.api import logger
+from astrbot.core.platform.astr_message_event import AstrMessageEvent
 
 from .config import PluginConfig
 from .client import GSVApiClient, GSVRequestResult
-from .entry import EntryManager
+from .entry import EntryManager, EmotionEntry
+from .emotion import EmotionJudger
 
 
 class GPTSoVITSService:
     def __init__(
-        self, config: PluginConfig, client: GSVApiClient, entry_mgr: EntryManager
+        self,
+        config: PluginConfig,
+        client: GSVApiClient,
+        entry_mgr: EntryManager,
+        judger: EmotionJudger,
     ):
         self.cfg = config.model
         self.default_params = config.default_params
-        self.entry_mgr = entry_mgr
-
         self.client = client
+        self.entry_mgr = entry_mgr
+        self.judger = judger
+        self.llm_judge_emotion = config.judge.enabled_llm
 
     async def load_model(self):
         if self.cfg.gpt_path:
@@ -30,16 +37,34 @@ class GPTSoVITSService:
             else:
                 logger.error(f"SoVITS 模型加载失败: {result.error}")
 
-    async def inference(self, text: str) -> GSVRequestResult:
-        """
-        TTS 推理
-        """
+    async def _judge_entry(
+        self,
+        text: str,
+        event: AstrMessageEvent | None = None,
+    ) -> EmotionEntry | None:
+        entry = None
+        if self.llm_judge_emotion and event:
+            labels = self.entry_mgr.get_names()
+            emotion = await self.judger.judge_emotion(event, text=text, labels=labels)
+            if emotion:
+                entry = self.entry_mgr.get_entry(emotion)
+        if not entry:
+            entry = self.entry_mgr.match_entry(text)
+        return entry
+
+
+    async def inference(
+        self,
+        text: str,
+        event: AstrMessageEvent | None = None,
+    ) -> GSVRequestResult:
+        """TTS 推理"""
         params = self.default_params.copy()
 
         if text:
             params["text"] = text
 
-        if entry:= self.entry_mgr.match_entry(text):
+        if entry := await self._judge_entry(text, event):
             params.update(entry.to_params())
             logger.debug(f"已匹配到情绪: {entry.name}, 已添加到参数中")
 

@@ -1,6 +1,5 @@
 # config.py
 from __future__ import annotations
-from pathlib import Path
 from typing import Any
 
 import yaml
@@ -38,7 +37,7 @@ class EntryManager:
             EmotionEntry(item) for item in self.cfg.entry_storage
         ]
         self.load_builtin_entry()
-        logger.debug(f"已注册情绪：{[e.name for e in self.entries]}")
+        logger.debug(f"已注册情绪：{self.get_names()}")
 
     def load_builtin_entry(self) -> None:
         file = self.cfg.builtin_entry_file
@@ -63,6 +62,10 @@ class EntryManager:
         if new_items:
             self.cfg.save_config()
             logger.info(f"已加载提示词：{[item[key] for item in new_items]}")
+
+    def get_names(self) -> list[str]:
+        """获取所有条目名称"""
+        return [entry.name for entry in self.entries]
 
     def get_entry(self, name: str) -> EmotionEntry | None:
         """获取条目"""
