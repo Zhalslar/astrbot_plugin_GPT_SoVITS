@@ -1,10 +1,12 @@
 # config.py
 from __future__ import annotations
+from pathlib import Path
 from typing import Any
 
 import yaml
 from astrbot.api import logger
 from .config import PluginConfig, ConfigNode
+
 
 class EmotionEntry(ConfigNode):
     name: str
@@ -13,10 +15,11 @@ class EmotionEntry(ConfigNode):
     prompt_text: str
     prompt_lang: str
     speed_factor: float
-    fragment_interval: int
+    fragment_interval: float
 
     def __init__(self, data: dict[str, Any]):
         super().__init__(data)
+        self.ref_audio_path = PluginConfig.normalize_path(self.ref_audio_path)
 
     def to_params(self) -> dict[str, Any]:
         return {
@@ -38,9 +41,13 @@ class EntryManager:
         logger.debug(f"已注册情绪：{[e.name for e in self.entries]}")
 
     def load_builtin_entry(self) -> None:
-        with self.cfg.builtin_entry_file.open("r", encoding="utf-8") as f:
-            data: list[dict[str, Any]] = yaml.safe_load(f) or []
-            self.add_entry(data)
+        file = self.cfg.builtin_entry_file
+        try:
+            with file.open("r", encoding="utf-8") as f:
+                data: list[dict[str, Any]] = yaml.safe_load(f) or []
+                self.add_entry(data)
+        except Exception as e:
+            logger.error(e)
 
     def add_entry(self, data: list[dict[str, Any]], key="name") -> None:
         existed = {e.name for e in self.entries}

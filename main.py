@@ -72,6 +72,8 @@ class GPTSoVITSPlugin(Star):
     @filter.command("说", alias={"gsv", "GSV"})
     async def on_command(self, event: AstrMessageEvent):
         """说 <内容>, 直接调用GSV合成语音"""
+        if not self.cfg.enabled:
+            return
         text = event.message_str.partition(" ")[2]
         result = await self.service.inference(text)
         seg = (
@@ -84,5 +86,7 @@ class GPTSoVITSPlugin(Star):
     @filter.command("重启GSV", alias={"重启gsv"})
     async def tts_control(self, event: AstrMessageEvent):
         """重启GPT_SoVITS"""
+        if not self.cfg.enabled:
+            return
         yield event.plain_result("重启TTS中...(报错信息请忽略，等待一会即可完成重启)")
         await self.service.restart()

@@ -151,9 +151,6 @@ class PluginConfig(ConfigNode):
         self.default_params["ref_audio_path"] = self.normalize_path(
             self.default_params["ref_audio_path"]
         )
-        for entry in self.entry_storage:
-            entry["ref_audio_path"] = self.normalize_path(entry["ref_audio_path"])
-
         self.save_config()
 
     @staticmethod

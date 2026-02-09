@@ -97,18 +97,24 @@
             "text_lang": {
                 "description": "文本语言",
                 "type": "string",
-                "hint": "zh 中文，en 英语，ja 日语，ko 韩语",
+                "hint": "要转化的文本的语言",
                 "options": [
                     "zh",
                     "en",
                     "ja",
                     "ko"
                 ],
+                "labels": [
+                    "中文",
+                    "英语",
+                    "日语",
+                    "韩语"
+                ],
                 "default": "zh"
             },
             "ref_audio_path": {
                 "description": "参考音频路径",
-                "type": "text",
+                "type": "string",
                 "hint": "用于音色克隆，支持 wav 格式，必填！",
                 "default": "data/plugins/astrbot_plugin_GPT_SoVITS/default_audio/就算是这样，也不至于直接碎掉啊，除非.wav"
             },
@@ -122,6 +128,18 @@
                 "description": "参考音频文本语言",
                 "type": "string",
                 "hint": "尽量与 prompt_text 语言一致",
+                "options": [
+                    "zh",
+                    "en",
+                    "ja",
+                    "ko"
+                ],
+                "labels": [
+                    "中文",
+                    "英语",
+                    "日语",
+                    "韩语"
+                ],
                 "default": "zh"
             },
             "top_k": {
@@ -160,7 +178,7 @@
             "text_split_method": {
                 "description": "文本切分方式",
                 "type": "string",
-                "hint": "影响长文本处理效果， `cut0`：不切分。    `cut1`：四句一切。  `cut2`：50字一切。    `cut3`：按中文句号切。    `cut4`：按英文句号切。    `cut5`：按标点符号切",
+                "hint": "影响长文本处理效果",
                 "options": [
                     "cut0",
                     "cut1",
@@ -168,6 +186,14 @@
                     "cut3",
                     "cut4",
                     "cut5"
+                ],
+                "labels": [
+                    "不切分",
+                    "四句一切",
+                    "50字一切",
+                    "按中文句号切",
+                    "按英文句号切",
+                    "按标点符号切"
                 ],
                 "default": "cut3"
             },
@@ -298,14 +324,19 @@
                     "prompt_lang": {
                         "description": "参考音频文本语言",
                         "type": "string",
-                        "hint": "zh 中文，en 英语，ja 日语，ko 韩语",
+                        "hint": "与参考音频对应的文本的语言保持一致",
                         "options": [
                             "zh",
                             "en",
                             "ja",
                             "ko"
                         ],
-                        "labels": ["中文", "英语", "日语", "韩语"],
+                        "labels": [
+                            "中文",
+                            "英语",
+                            "日语",
+                            "韩语"
+                        ],
                         "default": "zh"
                     },
                     "speed_factor": {
