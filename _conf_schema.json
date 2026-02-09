@@ -6,7 +6,7 @@
         "default": true
     },
     "auto": {
-        "description": "主动调用配置",
+        "description": "调用配置",
         "type": "object",
         "hint": "本插件有一定概率主动将bot本来要发送的文本转成语音发送",
         "items": {
@@ -27,7 +27,7 @@
                 },
                 "default": 0.15
             },
-            "max_llm_len": {
+            "max_msg_len": {
                 "description": "文本长度限制",
                 "type": "int",
                 "hint": "超过此长度的文本不会被转成语音发送",
@@ -40,24 +40,42 @@
             }
         }
     },
-    "base_url": {
-        "description": "GPT-SoVITS API 的 URL",
-        "type": "string",
-        "hint": "必填！GPT_SoVITS官方整合包默认为 http://127.0.0.1:9880 ，第三方整合包可能不同",
-        "default": "http://127.0.0.1:9880"
+    "client": {
+        "description": "客户端配置",
+        "type": "object",
+        "hint": "",
+        "items": {
+            "base_url": {
+                "description": "GPT-SoVITS API 的 URL",
+                "type": "string",
+                "hint": "必填！GPT_SoVITS官方整合包默认为 http://127.0.0.1:9880 ，第三方整合包可能不同",
+                "default": "http://127.0.0.1:9880"
+            },
+            "timeout": {
+                "description": "GPT-SoVITS API 请求超时时间",
+                "hint": "单位为秒",
+                "type": "int",
+                "slider": {
+                    "min": 30,
+                    "max": 180,
+                    "step": 1
+                },
+                "default": 60
+            }
+        }
     },
     "model": {
         "description": "模型配置",
         "type": "object",
         "hint": "",
         "items": {
-            "gpt_weights_path": {
+            "gpt_path": {
                 "description": "GPT模型文件路径",
                 "type": "string",
                 "hint": "即“.ckpt”后缀的文件。支持绝对路径和相对路径，拼接时请使用“/”, 不填则默认用GPT_SoVITS内置的GPT模型",
                 "default": ""
             },
-            "sovits_weights_path": {
+            "sovits_path": {
                 "description": "SoVITS模型文件路径",
                 "type": "string",
                 "hint": "即“.pth”后缀的文件。支持绝对路径和相对路径，拼接时请使用“/”, 不填则默认用GPT_SoVITS内置的SoVITS模型",
@@ -245,50 +263,37 @@
             }
         }
     },
-    "emotions": {
-        "description": "情绪配置",
-        "type": "object",
-        "hint": "情绪配置： AI回答 或 用户消息 包含某关键词 → 触发某组参数。未命中则使用默认参数",
-        "items": {
-            "one": {
-                "description": "【情绪1】参数配置",
-                "type": "object",
+    "entry_storage": {
+        "description": "情绪参数配置",
+        "hint": "可自定义多套情绪参数，并定义对应触发词。由此实现不同情绪的语音",
+        "type": "template_list",
+        "templates": {
+            "default": {
+                "name": "情绪条目",
                 "items": {
+                    "name": {
+                        "description": "情绪名",
+                        "type": "string",
+                        "hint": "用于查询与显示，请确保名称唯一",
+                        "default": "请输入情绪名"
+                    },
                     "keywords": {
-                        "description": "触发词列表",
+                        "description": "触发词",
                         "type": "list",
-                        "hint": "命中即走本组参数",
-                        "default": [
-                            "温柔",
-                            "深情",
-                            "宝贝",
-                            "亲爱的",
-                            "别怕",
-                            "我在呢",
-                            "抱抱",
-                            "安慰",
-                            "轻声",
-                            "细腻",
-                            "暖心",
-                            "软萌",
-                            "撒娇",
-                            "月光",
-                            "微风",
-                            "轻轻",
-                            "悄悄"
-                        ]
+                        "hint": "AI回复词中含有列表中的任一关键词时, 将使用此套的情绪参数",
+                        "default": []
                     },
                     "ref_audio_path": {
                         "description": "参考音频文件路径",
-                        "type": "text",
+                        "type": "string",
                         "hint": "支持绝对路径和相对路径，拼接时请使用“/”",
-                        "default": "data/plugins/astrbot_plugin_GPT_SoVITS/default_audio/不要害怕，也不要哭了.wav"
+                        "default": ""
                     },
                     "prompt_text": {
                         "description": "参考音频对应的文本",
                         "type": "string",
                         "hint": "建议填写，用于对齐音色与内容",
-                        "default": "不要害怕，也不要哭了"
+                        "default": ""
                     },
                     "prompt_lang": {
                         "description": "参考音频文本语言",
@@ -300,6 +305,7 @@
                             "ja",
                             "ko"
                         ],
+                        "labels": ["中文", "英语", "日语", "韩语"],
                         "default": "zh"
                     },
                     "speed_factor": {
@@ -323,174 +329,6 @@
                             "step": 0.1
                         },
                         "default": 0.7
-                    }
-                }
-            },
-            "two": {
-                "description": "【情绪2】参数配置",
-                "type": "object",
-                "items": {
-                    "keywords": {
-                        "description": "触发词列表",
-                        "type": "list",
-                        "hint": "命中即走本组参数",
-                        "default": [
-                            "开心",
-                            "高兴",
-                            "哈哈",
-                            "嘻嘻",
-                            "耶",
-                            "太棒了",
-                            "哇塞",
-                            "爽",
-                            "欧皇",
-                            "锦鲤",
-                            "庆祝",
-                            "红包",
-                            "胜利",
-                            "完美",
-                            "nice",
-                            "good",
-                            "耶嘿",
-                            "冲鸭",
-                            "加油",
-                            "奥利给"
-                        ]
-                    },
-                    "ref_audio_path": {
-                        "description": "参考音频文件路径",
-                        "type": "text",
-                        "hint": "支持绝对路径和相对路径，拼接时请使用“/”",
-                        "default": "data/plugins/astrbot_plugin_GPT_SoVITS/default_audio/它好像在等另一只蕈兽_心情很好的样子.wav"
-                    },
-                    "prompt_text": {
-                        "description": "参考音频对应的文本",
-                        "type": "string",
-                        "hint": "建议填写，用于对齐音色与内容",
-                        "default": "它好像在等另一只蕈兽_心情很好的样子"
-                    },
-                    "prompt_lang": {
-                        "description": "参考音频文本语言",
-                        "type": "string",
-                        "hint": "zh 中文，en 英语，ja 日语，ko 韩语",
-                        "options": [
-                            "zh",
-                            "en",
-                            "ja",
-                            "ko"
-                        ],
-                        "default": "zh"
-                    },
-                    "speed_factor": {
-                        "description": "语速倍数",
-                        "type": "float",
-                        "hint": "1.0 为原速",
-                        "slider": {
-                            "min": 0.5,
-                            "max": 2,
-                            "step": 0.1
-                        },
-                        "default": 1.1
-                    },
-                    "fragment_interval": {
-                        "description": "语音片段间隔（秒）",
-                        "type": "float",
-                        "hint": "间隔越短语气越急促",
-                        "slider": {
-                            "min": 0.1,
-                            "max": 2,
-                            "step": 0.1
-                        },
-                        "default": 0.3
-                    }
-                }
-            },
-            "three": {
-                "description": "【情绪3】参数配置",
-                "type": "object",
-                "items": {
-                    "keywords": {
-                        "description": "触发词列表",
-                        "type": "list",
-                        "hint": "命中即走本组参数",
-                        "default": [
-                            "生气",
-                            "哼",
-                            "尼玛",
-                            "妈",
-                            "操",
-                            "艹",
-                            "逼",
-                            "爹",
-                            "玩意",
-                            "滚",
-                            "鸡巴",
-                            "老子",
-                            "屎",
-                            "死",
-                            "靠",
-                            "烦",
-                            "抓狂",
-                            "怒",
-                            "火大",
-                            "气死",
-                            "坑爹",
-                            "辣鸡",
-                            "垃圾",
-                            "废物",
-                            "无语",
-                            "暴躁",
-                            "忍不了",
-                            "破防",
-                            "杠精",
-                            "找茬"
-                        ]
-                    },
-                    "ref_audio_path": {
-                        "description": "参考音频文件路径",
-                        "type": "text",
-                        "hint": "支持绝对路径和相对路径，拼接时请使用“/”",
-                        "default": "data/plugins/astrbot_plugin_GPT_SoVITS/default_audio/你还会选择现在的位置吗？到那时，你觉得自己又会是什么呢.wav"
-                    },
-                    "prompt_text": {
-                        "description": "参考音频对应的文本",
-                        "type": "string",
-                        "hint": "建议填写，用于对齐音色与内容",
-                        "default": "你还会选择现在的位置吗？到那时，你觉得自己又会是什么呢"
-                    },
-                    "prompt_lang": {
-                        "description": "参考音频文本语言",
-                        "type": "string",
-                        "hint": "zh 中文，en 英语，ja 日语，ko 韩语",
-                        "options": [
-                            "zh",
-                            "en",
-                            "ja",
-                            "ko"
-                        ],
-                        "default": "zh"
-                    },
-                    "speed_factor": {
-                        "description": "语速倍数",
-                        "type": "float",
-                        "hint": "1.0 为原速",
-                        "slider": {
-                            "min": 0.5,
-                            "max": 2,
-                            "step": 0.1
-                        },
-                        "default": 1.2
-                    },
-                    "fragment_interval": {
-                        "description": "语音片段间隔（秒）",
-                        "type": "float",
-                        "hint": "间隔越短语气越急促",
-                        "slider": {
-                            "min": 0.1,
-                            "max": 2,
-                            "step": 0.1
-                        },
-                        "default": 0.5
                     }
                 }
             }
