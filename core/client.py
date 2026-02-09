@@ -1,3 +1,4 @@
+import base64
 from dataclasses import dataclass
 from aiohttp import ClientError, ClientSession, ClientTimeout
 
@@ -9,13 +10,22 @@ from .config import PluginConfig
 class GSVRequestResult:
     ok: bool
     data: bytes | None = None
-    error: str | None = None
+    error: str  = ""
+
+    def __bool__(self) -> bool:
+        return self.ok and self.data is not None
+
+    def to_bs64(self) -> str:
+        if self.data is None:
+            return ""
+        return base64.urlsafe_b64encode(self.data).decode()
 
 
 class GSVApiClient:
     """
     API 层（HTTP 通信）
     """
+
     def __init__(self, config: PluginConfig):
         self.cfg = config.client
         self.base_url = self.cfg.base_url.rstrip("/")
