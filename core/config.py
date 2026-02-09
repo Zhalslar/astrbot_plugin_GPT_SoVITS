@@ -8,6 +8,7 @@ from typing import Any, Union, get_args, get_origin, get_type_hints
 
 from astrbot.api import logger
 from astrbot.core.config.astrbot_config import AstrBotConfig
+from astrbot.core.provider.provider import Provider
 from astrbot.core.star.context import Context
 from astrbot.core.star.star_tools import StarTools
 from astrbot.core.utils.astrbot_path import get_astrbot_plugin_path
@@ -123,13 +124,18 @@ class ModelConfig(ConfigNode):
     sovits_path: str
 
 
+class JudgeConfig(ConfigNode):
+    enabled_llm: bool
+    provider_id: str
+
+
 class PluginConfig(ConfigNode):
     enabled: bool
     auto: AutoConfig
     client: ClientConfig
     model: ModelConfig
     default_params: dict[str, Any]
-    emotions: dict[str, dict[str, Any]]
+    judge: JudgeConfig
     entry_storage: list[dict[str, Any]]
 
     _plugin_name: str = "astrbot_plugin_GPT_SoVITS"
@@ -158,3 +164,13 @@ class PluginConfig(ConfigNode):
         if not p:
             return p
         return str(Path(p).expanduser().resolve())
+
+    def get_judge_provider(self, umo: str | None = None) -> Provider:
+        provider = self.context.get_provider_by_id(
+            self.judge.provider_id
+        ) or self.context.get_using_provider(umo)
+
+        if not isinstance(provider, Provider):
+            raise RuntimeError("未找到可用的 LLM Provider")
+
+        return provider
