@@ -1,4 +1,3 @@
-import base64
 import random
 
 from astrbot.api.event import filter
@@ -13,6 +12,7 @@ from .core.config import PluginConfig
 from .core.entry import EntryManager
 from .core.emotion import EmotionJudger
 
+
 class GPTSoVITSPlugin(Star):
     def __init__(self, context: Context, config: AstrBotConfig):
         super().__init__(context)
@@ -20,8 +20,7 @@ class GPTSoVITSPlugin(Star):
         self.entry_mgr = EntryManager(self.cfg)
         self.client = GSVApiClient(self.cfg)
         self.judger = EmotionJudger(self.cfg)
-        self.service = GPTSoVITSService(self.cfg, self.client, self.entry_mgr, self.judger)
-
+        self.service = GPTSoVITSService(self.cfg, self.client)
 
     async def initialize(self):
         if self.cfg.enabled:
@@ -29,6 +28,28 @@ class GPTSoVITSPlugin(Star):
 
     async def terminate(self):
         await self.client.close()
+
+    async def _get_emotion_params(
+        self,
+        text: str,
+        event: AstrMessageEvent | None = None,
+    ) -> dict | None:
+        entry = None
+
+        if self.cfg.judge.enabled_llm and event:
+            labels = self.entry_mgr.get_names()
+            emotion = await self.judger.judge_emotion(
+                event,
+                text=text,
+                labels=labels,
+            )
+            if emotion:
+                entry = self.entry_mgr.get_entry(emotion)
+
+        if entry is None:
+            entry = self.entry_mgr.match_entry(text)
+
+        return entry.to_params() if entry else None
 
     @filter.on_decorating_result(priority=14)
     async def on_decorating_result(self, event: AstrMessageEvent):
@@ -65,11 +86,11 @@ class GPTSoVITSPlugin(Star):
         if len(combined_text) > cfg.max_msg_len:
             return
 
-        result = await self.service.inference(combined_text)
-        if result.ok and result.data:
+        params = await self._get_emotion_params(combined_text, event)
+        result = await self.service.inference(combined_text, extra_params=params)
+        if result.ok:
             chain.clear()
-            b64_str = base64.urlsafe_b64encode(result.data).decode()
-            chain.append(Record.fromBase64(b64_str))
+            chain.append(Record.fromBase64(result.to_bs64()))
 
     @filter.command("说", alias={"gsv", "GSV"})
     async def on_command(self, event: AstrMessageEvent):
@@ -78,11 +99,7 @@ class GPTSoVITSPlugin(Star):
             return
         text = event.message_str.partition(" ")[2]
         result = await self.service.inference(text)
-        seg = (
-            Record.fromBase64(base64.urlsafe_b64encode(result.data).decode())
-            if result.ok and result.data
-            else Plain(str(result.error))
-        )
+        seg = Record.fromBase64(result.to_bs64()) if result.ok else Plain(result.error)
         yield event.chain_result([seg])
 
     @filter.command("重启GSV", alias={"重启gsv"})
@@ -92,3 +109,22 @@ class GPTSoVITSPlugin(Star):
             return
         yield event.plain_result("重启TTS中...(报错信息请忽略，等待一会即可完成重启)")
         await self.service.restart()
+
+    @filter.llm_tool()
+    async def gsv_tts(self, event: AstrMessageEvent, message: str = ""):
+        """
+        用语音输出要讲的话
+        Args:
+            message(string): 要讲的话
+            get_image(boolean): 是否获取当前对话中的图片附加到说说里, 默认为True
+        """
+        try:
+            params = await self._get_emotion_params(message, event)
+            result = await self.service.inference(message, extra_params=params)
+            if result.ok:
+                seg = Record.fromBase64(result.to_bs64())
+                await event.send(event.chain_result([seg]))
+            else:
+                return result.error
+        except Exception as e:
+            return str(e)
