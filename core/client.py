@@ -1,8 +1,12 @@
 import base64
 from dataclasses import dataclass
+from datetime import datetime
+from pathlib import Path
+
 from aiohttp import ClientError, ClientSession, ClientTimeout
 
 from astrbot.api import logger
+
 from .config import PluginConfig
 
 
@@ -10,7 +14,7 @@ from .config import PluginConfig
 class GSVRequestResult:
     ok: bool
     data: bytes | None = None
-    error: str  = ""
+    error: str = ""
 
     def __bool__(self) -> bool:
         return self.ok and self.data is not None
@@ -19,6 +23,46 @@ class GSVRequestResult:
         if self.data is None:
             return ""
         return base64.urlsafe_b64encode(self.data).decode()
+
+    def save(self, path: str | Path, filename: str | None = None) -> Path:
+        """
+        保存音频到指定路径
+
+        Args:
+            path: 目录路径或完整文件路径
+            filename: 文件名（如果 path 是目录则必填）
+
+        Returns:
+            保存后的完整路径
+        """
+        if self.data is None:
+            raise ValueError("无音频数据可保存")
+
+        target = Path(path)
+
+        # 如果 path 是目录，需要 filename
+        if target.is_dir() or (not target.suffix and filename):
+            if not filename:
+                # 自动生成时间戳文件名
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                filename = f"gsv_{timestamp}.wav"
+            target = target / filename
+
+        # 确保父目录存在
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(self.data)
+
+        return target.resolve()
+
+    @property
+    def size(self) -> int:
+        """音频数据大小（字节）"""
+        return len(self.data) if self.data else 0
+
+    @property
+    def is_empty(self) -> bool:
+        """是否无数据"""
+        return self.data is None or len(self.data) == 0
 
 
 class GSVApiClient:

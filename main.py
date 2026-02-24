@@ -1,5 +1,6 @@
 import random
 
+from astrbot.api import logger
 from astrbot.api.event import filter
 from astrbot.api.star import Context, Star
 from astrbot.core import AstrBotConfig
@@ -7,10 +8,10 @@ from astrbot.core.message.components import Plain, Record
 from astrbot.core.platform import AstrMessageEvent
 
 from .core.client import GSVApiClient
-from .core.service import GPTSoVITSService
 from .core.config import PluginConfig
-from .core.entry import EntryManager
 from .core.emotion import EmotionJudger
+from .core.entry import EntryManager
+from .core.service import GPTSoVITSService
 
 
 class GPTSoVITSPlugin(Star):
@@ -94,13 +95,20 @@ class GPTSoVITSPlugin(Star):
 
     @filter.command("说", alias={"gsv", "GSV"})
     async def on_command(self, event: AstrMessageEvent):
-        """说 <内容>, 直接调用GSV合成语音"""
         if not self.cfg.enabled:
             return
+
         text = event.message_str.partition(" ")[2]
         res = await self.service.inference(text)
-        seg = Record.fromBase64(res.to_bs64()) if res else Plain(res.error)
-        yield event.chain_result([seg])
+
+        if not res:
+            yield event.plain_result(f"合成失败: {res.error}")
+            return
+
+        saved_path = res.save(self.cfg.audio_dir)
+
+        yield event.chain_result([Record.fromBase64(res.to_bs64())])
+        logger.info(f"已保存音频文件: {saved_path}")
 
     @filter.command("重启GSV", alias={"重启gsv"})
     async def tts_control(self, event: AstrMessageEvent):
