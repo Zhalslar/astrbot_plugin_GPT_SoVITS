@@ -309,6 +309,36 @@
             }
         }
     },
+    "cache": {
+        "description": "缓存配置",
+        "type": "object",
+        "hint": "",
+        "items": {
+            "enabled": {
+                "description": "启用语音缓存",
+                "hint": "开启后，请求参数一致时直接复用本地缓存音频，减少重复推理",
+                "type": "bool",
+                "default": true
+            },
+            "expire_hours": {
+                "description": "缓存过期时间(h)",
+                "hint": "单位为小时。 0 表示永不过期，大于 0 时按文件修改时间判断是否过期",
+                "type": "int",
+                "slider": {
+                    "min": 0,
+                    "max": 240,
+                    "step": 1
+                },
+                "default": 0
+            },
+            "path": {
+                "description": "缓存路径",
+                "hint": "支持绝对路径和相对路径；留空时默认 data/plugins_data/astrbot_plugin_GPT_SoVITS/audio",
+                "type": "string",
+                "default": "data/plugins_data/astrbot_plugin_GPT_SoVITS/audio"
+            }
+        }
+    },
     "entry_storage": {
         "description": "情绪参数配置",
         "hint": "可自定义多套情绪参数，并定义对应触发词。由此实现不同情绪的语音",

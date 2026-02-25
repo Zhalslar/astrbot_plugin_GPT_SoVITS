@@ -1,10 +1,13 @@
 # config.py
 from __future__ import annotations
+
 from typing import Any
 
 import yaml
+
 from astrbot.api import logger
-from .config import PluginConfig, ConfigNode
+
+from .config import ConfigNode, PluginConfig
 
 
 class EmotionEntry(ConfigNode):

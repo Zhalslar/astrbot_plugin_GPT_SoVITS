@@ -1,8 +1,10 @@
 from typing import Any
+
 from astrbot.api import logger
 
-from .config import PluginConfig
 from .client import GSVApiClient, GSVRequestResult
+from .config import PluginConfig
+from .local_data import LocalDataManager
 
 
 class GPTSoVITSService:
@@ -10,10 +12,12 @@ class GPTSoVITSService:
         self,
         config: PluginConfig,
         client: GSVApiClient,
+        local_data: LocalDataManager,
     ):
         self.cfg = config.model
         self.default_params = config.default_params
         self.client = client
+        self.local_data = local_data
 
     async def load_model(self):
         if self.cfg.gpt_path:
@@ -47,12 +51,26 @@ class GPTSoVITSService:
             params.update(filtered_params)
             logger.debug(f"已更新已有参数: {filtered_params}")
 
+        cached_audio = self.local_data.get_cached_audio(params)
+        if cached_audio:
+            cache_path, cached_data = cached_audio
+            logger.debug("命中缓存，跳过 TTS 请求")
+            return GSVRequestResult(
+                ok=True,
+                data=cached_data,
+                text=str(params.get("text", "")),
+                file_path=str(cache_path),
+            )
 
         logger.debug(f"向 GSV 发起 TTS 请求，参数: {params}")
         result = await self.client.tts(params)
 
-        if not result.ok or not result.data:
-            logger.error(f"TTS 失败: {result.error}")
+        if bool(result):
+            cache_path = self.local_data.save_audio(result.data, params)
+            if cache_path:
+                result.file_path = str(cache_path)
+        else:
+            logger.error(f"TTS 推理失败: {result.error}")
 
         return result
 
