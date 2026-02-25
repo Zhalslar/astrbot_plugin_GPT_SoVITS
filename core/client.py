@@ -1,7 +1,4 @@
-import base64
 from dataclasses import dataclass
-from datetime import datetime
-from pathlib import Path
 
 from aiohttp import ClientError, ClientSession, ClientTimeout
 
@@ -15,44 +12,8 @@ class GSVRequestResult:
     ok: bool
     data: bytes | None = None
     error: str = ""
-
-    def __bool__(self) -> bool:
-        return self.ok and self.data is not None
-
-    def to_bs64(self) -> str:
-        if self.data is None:
-            return ""
-        return base64.urlsafe_b64encode(self.data).decode()
-
-    def save(self, path: str | Path, filename: str | None = None) -> Path:
-        """
-        保存音频到指定路径
-
-        Args:
-            path: 目录路径或完整文件路径
-            filename: 文件名（如果 path 是目录则必填）
-
-        Returns:
-            保存后的完整路径
-        """
-        if self.data is None:
-            raise ValueError("无音频数据可保存")
-
-        target = Path(path)
-
-        # 如果 path 是目录，需要 filename
-        if target.is_dir() or (not target.suffix and filename):
-            if not filename:
-                # 自动生成时间戳文件名
-                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                filename = f"gsv_{timestamp}.wav"
-            target = target / filename
-
-        # 确保父目录存在
-        target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_bytes(self.data)
-
-        return target.resolve()
+    text: str = ""
+    file_path: str = ""
 
     @property
     def size(self) -> int:
@@ -62,7 +23,11 @@ class GSVRequestResult:
     @property
     def is_empty(self) -> bool:
         """是否无数据"""
-        return self.data is None or len(self.data) == 0
+        return self.size == 0
+
+    def __bool__(self) -> bool:
+        return self.ok and not self.is_empty
+
 
 
 class GSVApiClient:
@@ -90,7 +55,9 @@ class GSVApiClient:
         *,
         params: dict | None = None,
     ) -> GSVRequestResult:
+        request_text = ""
         if params:
+            request_text = str(params.get("text", ""))
             params = {
                 k: str(v).lower() if isinstance(v, bool) else v
                 for k, v in params.items()
@@ -103,20 +70,22 @@ class GSVApiClient:
                     return GSVRequestResult(
                         ok=False,
                         error=f"HTTP {resp.status}: {detail}",
+                        text=request_text,
                     )
 
                 return GSVRequestResult(
                     ok=True,
                     data=await resp.read(),
+                    text=request_text,
                 )
 
         except ClientError as e:
             logger.error(f"[HTTP] 请求失败: {url} | {e}")
-            return GSVRequestResult(False, error=str(e))
+            return GSVRequestResult(False, error=str(e), text=request_text)
 
         except Exception as e:
             logger.exception(f"[HTTP] 未知异常: {url}")
-            return GSVRequestResult(False, error=str(e))
+            return GSVRequestResult(False, error=str(e), text=request_text)
 
     async def set_gpt_weights(self, path: str) -> GSVRequestResult:
         return await self._request(

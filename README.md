@@ -89,7 +89,7 @@ python3 api_v2.py
 
 | 命令 | 别名 | 说明 |
 | ----- | ----- | ----- |
-| `说 <文本>` | `gsv <文本>`、`GSV <文本>` | 手动触发 TTS。成功后音频会保存到插件数据目录 `audio` 文件夹 |
+| `说 <文本>` | `gsv <文本>`、`GSV <文本>` | 手动触发 TTS。启用缓存时，同参数请求会优先复用本地音频 |
 | 概率调用（无命令） | - | Bot 回复阶段按概率自动转语音。触发条件：插件启用、命中概率、消息链全为纯文本、文本长度不超过最大长度 |
 | 工具调用（无命令） | LLM Tool | 供模型工具调用的 TTS 接口，由 bot 自行决定是否需要转语音 |
 | `重启GSV` | `重启gsv` | 请求 GPT-SoVITS 执行重启 |
@@ -160,6 +160,25 @@ python3 api_v2.py
 | `entry_storage[].ref_audio_path` | 该情绪使用的参考音频 | 可与默认参考音频不同 |
 | `entry_storage[].prompt_text/prompt_lang` | 该参考音频对应文本和语言 | 建议准确填写 |
 | `entry_storage[].speed_factor/fragment_interval` | 该情绪下语速与间隔 | 用于塑造语气差异 |
+
+### 6.5 缓存配置（`cache`）
+
+| 字段 | 说明 | 建议/取值 |
+| --- | --- | --- |
+| `cache.enabled` | 是否启用参数级缓存 | 建议开启；同参数请求可直接复用本地缓存 |
+| `cache.expire_hours` | 缓存过期时间（小时） | `0` 表示永不过期；大于 `0` 时按缓存文件修改时间判定 |
+| `cache.path` | 三种调用方式共用保存目录 | 支持相对/绝对路径；留空默认 `data/plugins_data/astrbot_plugin_GPT_SoVITS/audio` |
+
+### 6.6 本地数据与缓存机制
+
+插件通过 `LocalDataManager` 统一管理本地音频数据：
+
+1. 本地音频文件名：`gsv_<参数哈希>.<ext>`。
+2. 哈希由完整请求参数生成（排序后 JSON + SHA256 截断），确保“参数一致 -> 命中同一文件”。
+3. 音频扩展名来自 `media_type`（仅支持 `wav/mp3/ogg`，异常值回退为 `wav`）。
+4. 当 `cache.enabled=true` 时，请求前先查缓存；命中则直接发送本地缓存文件，未命中才请求 GPT-SoVITS。
+5. 请求成功后会按同一参数规则写入本地目录，供后续直接复用。
+6. `cache.expire_hours=0` 时缓存永不过期；大于 `0` 时，过期缓存会在读取时自动删除。
 
 ---
 

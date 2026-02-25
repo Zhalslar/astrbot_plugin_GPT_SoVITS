@@ -129,6 +129,12 @@ class JudgeConfig(ConfigNode):
     provider_id: str
 
 
+class CacheConfig(ConfigNode):
+    enabled: bool
+    expire_hours: int
+    path: str
+
+
 class PluginConfig(ConfigNode):
     enabled: bool
     auto: AutoConfig
@@ -136,6 +142,7 @@ class PluginConfig(ConfigNode):
     model: ModelConfig
     default_params: dict[str, Any]
     judge: JudgeConfig
+    cache: CacheConfig
     entry_storage: list[dict[str, Any]]
 
     _plugin_name: str = "astrbot_plugin_GPT_SoVITS"
@@ -147,16 +154,18 @@ class PluginConfig(ConfigNode):
         self.data_dir = StarTools.get_data_dir(self._plugin_name)
         self.plugin_dir = Path(get_astrbot_plugin_path()) / self._plugin_name
 
-        self.audio_dir = self.data_dir / "audio"
-        self.audio_dir.mkdir(parents=True, exist_ok=True)
-
-        self.builtin_entry_file = self.plugin_dir / "builtin_entry.yaml"
-
         self.model.gpt_path = self.normalize_path(self.model.gpt_path)
         self.model.sovits_path = self.normalize_path(self.model.sovits_path)
         self.default_params["ref_audio_path"] = self.normalize_path(
             self.default_params["ref_audio_path"]
         )
+        self.cache.path = self.normalize_path(self.cache.path)
+
+        self.builtin_entry_file = self.plugin_dir / "builtin_entry.yaml"
+
+        self.audio_dir = Path(self.cache.path) or self.data_dir / "audio"
+        self.audio_dir.mkdir(parents=True, exist_ok=True)
+
         self.save_config()
 
     @staticmethod

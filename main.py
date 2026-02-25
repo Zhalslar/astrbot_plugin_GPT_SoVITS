@@ -1,3 +1,4 @@
+import base64
 import random
 
 from astrbot.api import logger
@@ -7,10 +8,11 @@ from astrbot.core import AstrBotConfig
 from astrbot.core.message.components import Plain, Record
 from astrbot.core.platform import AstrMessageEvent
 
-from .core.client import GSVApiClient
+from .core.client import GSVApiClient, GSVRequestResult
 from .core.config import PluginConfig
 from .core.emotion import EmotionJudger
 from .core.entry import EntryManager
+from .core.local_data import LocalDataManager
 from .core.service import GPTSoVITSService
 
 
@@ -18,10 +20,11 @@ class GPTSoVITSPlugin(Star):
     def __init__(self, context: Context, config: AstrBotConfig):
         super().__init__(context)
         self.cfg = PluginConfig(config, context)
+        self.local_data = LocalDataManager(self.cfg)
         self.entry_mgr = EntryManager(self.cfg)
         self.client = GSVApiClient(self.cfg)
         self.judger = EmotionJudger(self.cfg)
-        self.service = GPTSoVITSService(self.cfg, self.client)
+        self.service = GPTSoVITSService(self.cfg, self.client, self.local_data)
 
     async def initialize(self):
         if self.cfg.enabled:
@@ -30,20 +33,30 @@ class GPTSoVITSPlugin(Star):
     async def terminate(self):
         await self.client.close()
 
+    @staticmethod
+    def _to_record(res: GSVRequestResult) -> Record:
+        if res.file_path:
+            try:
+                return Record.fromFileSystem(res.file_path)
+            except Exception:
+                logger.warning(f"无法读取文件：{res.file_path}, 已忽略")
+                pass
+
+        if not res.data:
+            raise ValueError("无法获取结果数据")
+
+        b64 = base64.urlsafe_b64encode(res.data).decode()
+        return Record.fromBase64(b64)
+
+
     async def _get_emotion_params(
-        self,
-        text: str,
-        event: AstrMessageEvent | None = None,
+        self, event: AstrMessageEvent, text: str
     ) -> dict | None:
         entry = None
 
-        if self.cfg.judge.enabled_llm and event:
+        if self.cfg.judge.enabled_llm:
             labels = self.entry_mgr.get_names()
-            emotion = await self.judger.judge_emotion(
-                event,
-                text=text,
-                labels=labels,
-            )
+            emotion = await self.judger.judge_emotion(event, text=text, labels=labels)
             if emotion:
                 entry = self.entry_mgr.get_entry(emotion)
 
@@ -87,28 +100,27 @@ class GPTSoVITSPlugin(Star):
         if len(combined_text) > cfg.max_msg_len:
             return
 
-        params = await self._get_emotion_params(combined_text, event)
+        params = await self._get_emotion_params(event, combined_text)
         res = await self.service.inference(combined_text, extra_params=params)
-        if res:
-            chain.clear()
-            chain.append(Record.fromBase64(res.to_bs64()))
+        if not bool(res):
+            return
+        chain.clear()
+        chain.append(self._to_record(res))
 
     @filter.command("说", alias={"gsv", "GSV"})
     async def on_command(self, event: AstrMessageEvent):
+        """说 <内容>, 直接调用GSV合成语音"""
         if not self.cfg.enabled:
             return
 
         text = event.message_str.partition(" ")[2]
         res = await self.service.inference(text)
 
-        if not res:
-            yield event.plain_result(f"合成失败: {res.error}")
+        if not bool(res):
+            yield event.plain_result(res.error)
             return
 
-        saved_path = res.save(self.cfg.audio_dir)
-
-        yield event.chain_result([Record.fromBase64(res.to_bs64())])
-        logger.info(f"已保存音频文件: {saved_path}")
+        yield event.chain_result([self._to_record(res)])
 
     @filter.command("重启GSV", alias={"重启gsv"})
     async def tts_control(self, event: AstrMessageEvent):
@@ -126,12 +138,11 @@ class GPTSoVITSPlugin(Star):
             message(string): 要讲的话
         """
         try:
-            params = await self._get_emotion_params(message, event)
+            params = await self._get_emotion_params(event, message)
             res = await self.service.inference(message, extra_params=params)
-            if res:
-                seg = Record.fromBase64(res.to_bs64())
-                await event.send(event.chain_result([seg]))
-            else:
+            if not bool(res):
                 return res.error
+            seg = self._to_record(res)
+            await event.send(event.chain_result([seg]))
         except Exception as e:
             return str(e)
