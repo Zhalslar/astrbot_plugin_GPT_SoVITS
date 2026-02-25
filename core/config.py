@@ -163,7 +163,9 @@ class PluginConfig(ConfigNode):
 
         self.builtin_entry_file = self.plugin_dir / "builtin_entry.yaml"
 
-        self.audio_dir = Path(self.cache.path) or self.data_dir / "audio"
+        self.audio_dir = (
+            Path(self.cache.path) if self.cache.path else self.data_dir / "audio"
+        )
         self.audio_dir.mkdir(parents=True, exist_ok=True)
 
         self.save_config()
