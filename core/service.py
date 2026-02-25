@@ -69,6 +69,8 @@ class GPTSoVITSService:
             cache_path = self.local_data.save_audio(result.data, params)
             if cache_path:
                 result.file_path = str(cache_path)
+        else:
+            logger.error(f"TTS 推理失败: {result.error}")
 
         return result
 
