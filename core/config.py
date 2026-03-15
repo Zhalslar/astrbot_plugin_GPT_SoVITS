@@ -1,8 +1,9 @@
 # config.py
 from __future__ import annotations
 
+import re
 from collections.abc import Mapping, MutableMapping
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 from types import MappingProxyType, UnionType
 from typing import Any, Union, get_args, get_origin, get_type_hints
 
@@ -174,7 +175,21 @@ class PluginConfig(ConfigNode):
     def normalize_path(p: str) -> str:
         if not p:
             return p
-        return str(Path(p).expanduser().resolve())
+        path_text = p.strip()
+        if not path_text:
+            return path_text
+
+        match = re.search(r"([A-Za-z]:[\\/].*)$", path_text)
+        if match and PureWindowsPath(match.group(1)).is_absolute():
+            return match.group(1)
+
+        if PureWindowsPath(path_text).is_absolute():
+            return path_text
+
+        path = Path(path_text).expanduser()
+        if path.is_absolute():
+            return str(path)
+        return str(path.resolve())
 
     def get_judge_provider(self, umo: str | None = None) -> Provider:
         provider = self.context.get_provider_by_id(
