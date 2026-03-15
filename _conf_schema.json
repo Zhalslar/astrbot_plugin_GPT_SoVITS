@@ -72,13 +72,13 @@
             "gpt_path": {
                 "description": "GPT模型文件路径",
                 "type": "string",
-                "hint": "即“.ckpt”后缀的文件。支持绝对路径和相对路径，拼接时请使用“/”, 不填则默认用GPT_SoVITS内置的GPT模型",
+                "hint": "即“.ckpt”后缀的文件。请使用 “/” 分隔路径，支持绝对路径和相对路径。不填则默认用 GPT_SoVITS 内置 GPT 模型",
                 "default": ""
             },
             "sovits_path": {
                 "description": "SoVITS模型文件路径",
                 "type": "string",
-                "hint": "即“.pth”后缀的文件。支持绝对路径和相对路径，拼接时请使用“/”, 不填则默认用GPT_SoVITS内置的SoVITS模型",
+                "hint": "即“.pth”后缀的文件。请使用 “/” 分隔路径，支持绝对路径和相对路径。不填则默认用 GPT_SoVITS 内置 SoVITS 模型",
                 "default": ""
             }
         }
@@ -115,7 +115,7 @@
             "ref_audio_path": {
                 "description": "参考音频路径",
                 "type": "string",
-                "hint": "用于音色克隆，支持 wav 格式，必填！",
+                "hint": "用于音色克隆，请使用 “/” 分隔路径，支持 wav 格式，必填。",
                 "default": "data/plugins/astrbot_plugin_GPT_SoVITS/default_audio/就算是这样，也不至于直接碎掉啊，除非.wav"
             },
             "prompt_text": {
@@ -333,7 +333,7 @@
             },
             "path": {
                 "description": "缓存路径",
-                "hint": "支持绝对路径和相对路径；留空时默认 data/plugins_data/astrbot_plugin_GPT_SoVITS/audio",
+                "hint": "请使用 “/” 分隔路径，支持绝对路径和相对路径；留空时默认 data/plugins_data/astrbot_plugin_GPT_SoVITS/audio",
                 "type": "string",
                 "default": "data/plugins_data/astrbot_plugin_GPT_SoVITS/audio"
             }
@@ -362,7 +362,7 @@
                     "ref_audio_path": {
                         "description": "参考音频文件路径",
                         "type": "string",
-                        "hint": "支持绝对路径和相对路径，拼接时请使用“/”",
+                        "hint": "请使用 “/” 分隔路径，支持绝对路径和相对路径",
                         "default": ""
                     },
                     "prompt_text": {
