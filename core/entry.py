@@ -43,6 +43,8 @@ class EntryManager:
         logger.debug(f"已注册情绪：{self.get_names()}")
 
     def load_builtin_entry(self) -> None:
+        if self.entries:
+            return
         file = self.cfg.builtin_entry_file
         try:
             with file.open("r", encoding="utf-8") as f:
